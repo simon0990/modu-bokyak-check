@@ -1,0 +1,1965 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>내 조합 확인하기 — 모두의 복약 (검수 전 프로토타입)</title>
+<!-- 1×1 투명 PNG. 브라우저가 /favicon.ico 를 자동으로 요청하는 것까지 막아 요청 0건을 지킨다.
+     (data:, 처럼 빈 URI 를 주면 크롬이 무효로 보고 /favicon.ico 를 그대로 때린다) -->
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==">
+<style>
+/* ==========================================================================
+   3040 변형 전용 팔레트 — 앱 토큰(tokens.css)과 의도적으로 다르다.
+   인스타그램 피드·스토리에서 눈에 띄고 스크린샷이 잘 나오도록 어두운 배경
+   기반으로 새로 짰다. 이 파일에 한해 앱 공통 토큰을 따르지 않는다.
+   경고 3등급(주의=빨강/시간조정=주황/확인권장=파랑) 의미는 그대로 유지하고
+   밝기만 어두운 배경에 맞게 올렸다. 초록은 토큰 정의 외에는 어디에도 쓰지
+   않는다 — 「주의 0건」이 가장 흔한 결과라 초록을 쓰면 "안전하다"로 읽힌다.
+   ========================================================================== */
+:root {
+  --primary-navy:      #1E1B4B;  /* 히어로 그라데이션의 짙은 쪽 끝(다크 인디고) 전용 */
+  --primary-blue:      #A78BFA;  /* 바이올렛 — 텍스트·아이콘·테두리용 밝은 톤 */
+  --primary-fill:      #7C3AED;  /* 바이올렛 — 흰 글자를 올리는 버튼·칩 배경용 진한 톤 */
+  --secondary-blue:    #22D3EE;  /* 시안 — 보조 액센트("완료" 표시 등) */
+  --light-blue-bg:     #241E42;  /* 바이올렛 톤 다크 칩 배경 */
+  --card-bg:           #1B2438;
+  --border:            #2C3A55;
+  --text:              #E8EDF7;
+  --text-secondary:    #94A3B8;
+  --heading:            #EDE9FE;  /* 제목·강조 숫자 — 옅은 바이올렛 화이트 (원래 primary-navy 가 하던 역할) */
+  --success-green:     #36B37E;  /* 토큰 정의만 유지 — 이 프로토타입 어디에도 시각적으로 쓰지 않는다 (금지) */
+  --warning-orange:    #FDBA74;  /* 시간 조정 — 어두운 배경에서 읽히도록 밝게 */
+  --danger-red:        #FCA5A5;  /* 주의 — 어두운 배경에서 읽히도록 밝게 */
+  --condition-purple:  #D8B4FE;  /* 보라 계열 — 건강기능식품 라벨용 밝은 톤 */
+  --check-blue:        #7DD3FC;  /* 확인 권장 전용 — 브랜드 바이올렛과 구분되는 파랑 계열 */
+
+  --screen-bg:         #0F1729;
+  --green-bg:          #16352A;  /* 정의만 유지 — 미사용. 초록 배경도 「문제 없음」 신호로 쓰지 않는다 */
+  --orange-bg:         #3A2A1D;
+  --red-bg:            #3A1F24;
+  --purple-bg:         #34163F;  /* light-blue-bg 보다 마젠타 쪽으로 틀어 건기식 태그를 구분 */
+  --blue-bg:           #17293C;  /* 확인 권장(check) 카드·칩 배경 */
+
+  --fs-body:      16px;
+  --fs-emphasis:  19px;
+  --fs-title:     22px;
+  --fs-hero:      30px;
+
+  --sp-xs:  4px;
+  --sp-sm:  8px;
+  --sp-md: 16px;
+  --sp-lg: 24px;
+  --sp-xl: 32px;
+
+  --r-card:   16px;
+  --r-button: 14px;
+  --r-pill:   999px;
+
+  --min-touch: 48px;
+
+  --demo-strip-h: 38px;
+}
+
+* { box-sizing: border-box; }
+
+/* ==========================================================================
+   페이지 셸 — 목업의 폰 프레임(.phone / .statusbar / .wf-urlbar / .wf-fold)을
+   전부 걷어냈다. 여기서는 브라우저가 그 역할을 한다.
+   ========================================================================== */
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--screen-bg);
+  font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  color: var(--text);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* SPEC §1 — 검수가 끝나기 전에는 절대 제거하지 않는다.
+   어두운 배경에 맞춰 조금 더 선명한 톤으로 올렸다 — 덜 띄게 하지 않는다. */
+.demo-strip {
+  position: sticky; top: 0; z-index: 200;
+  min-height: var(--demo-strip-h);
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px;
+  background: #9A3412; color: #FFE8D6;
+  font-size: 13px; font-weight: 700; line-height: 1.4;
+  padding: 7px 14px; text-align: center;
+}
+.demo-strip svg { width: 15px; height: 15px; flex: none; color: #FDBA74; }
+
+.app {
+  max-width: 430px;
+  margin: 0 auto;
+  background: var(--screen-bg);
+  min-height: calc(100vh - var(--demo-strip-h));
+  display: flex;
+  flex-direction: column;
+}
+@media (min-width: 486px) {
+  .app { border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+}
+
+.screen-body {
+  flex: 1;
+  padding: var(--sp-lg);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.screen-body.no-pad { padding: 0; }
+
+/* ScreenHeader.tsx */
+.screen-header {
+  flex: none;
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--card-bg);
+  padding: 8px 12px 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: var(--demo-strip-h); z-index: 30;
+}
+.screen-header .sh-side { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+.screen-header .sh-title {
+  flex: 1; text-align: center;
+  font-size: var(--fs-title); font-weight: 700; color: var(--heading);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   컴포넌트 — care-app/src/components/*.tsx 대응 (tokens.css 사본)
+   ========================================================================== */
+.big-btn {
+  min-height: var(--min-touch);
+  border-radius: var(--r-button);
+  display: flex; align-items: center; justify-content: center; gap: var(--sp-sm);
+  padding: 14px 16px;
+  margin: 6px 0;
+  font-size: var(--fs-emphasis); font-weight: 700; font-family: inherit;
+  border: none; cursor: pointer; flex: none;
+  width: 100%;
+  text-align: center;
+}
+.big-btn.primary   { background: var(--primary-fill); color: #fff; box-shadow: 0 6px 14px rgba(124, 58, 237, 0.35); }
+.big-btn.secondary { background: var(--card-bg); color: var(--primary-blue); border: 1px solid var(--border); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.30); }
+.big-btn.ghost     { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); box-shadow: none; }
+.big-btn:disabled  { opacity: .45; cursor: default; }
+
+.card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--r-card); padding: var(--sp-md); flex: none; }
+.card.elevated { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); }
+
+.row-card {
+  display: flex; align-items: center; gap: var(--sp-md);
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--r-card);
+  padding: var(--sp-md); flex: none;
+  width: 100%; text-align: left; font-family: inherit; color: inherit;
+}
+button.row-card { cursor: pointer; }
+
+.icon-box {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--light-blue-bg);
+  display: flex; align-items: center; justify-content: center;
+  flex: none; color: var(--primary-blue);
+}
+.icon-box.lg     { width: 56px; height: 56px; border-radius: var(--r-card); }
+.icon-box.orange { background: var(--orange-bg); color: var(--warning-orange); }
+.icon-box.purple { background: var(--purple-bg);  color: var(--condition-purple); }
+
+.tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: var(--r-pill);
+  font-size: 14px; font-weight: 700; flex: none;
+}
+.tag.rx    { background: var(--light-blue-bg); color: var(--primary-blue); }
+.tag.suppl { background: var(--purple-bg);     color: var(--condition-purple); }
+.tag.warn  { background: var(--orange-bg);     color: var(--warning-orange); }
+.tag.gray  { background: rgba(255,255,255,.07); color: var(--text-secondary); }
+
+.chip {
+  min-height: 52px; min-width: 72px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: var(--card-bg); color: var(--text);
+  font-size: 18px; font-weight: 700; font-family: inherit;
+  padding: 0 18px; margin: 6px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+}
+.chip.selected { background: var(--primary-fill); border-color: var(--primary-fill); color: #fff; }
+.chip.sm { min-height: 40px; min-width: 0; font-size: 16px; padding: 0 14px; margin: 0; }
+
+.footer-bar { flex: none; padding: var(--sp-lg); background: var(--card-bg); border-top: 1px solid var(--border); }
+
+.section-title {
+  font-size: var(--fs-emphasis); font-weight: 700; color: var(--text);
+  margin: var(--sp-lg) 0 var(--sp-sm); flex: none;
+  scroll-margin-top: 52px;
+}
+.section-title.first { margin-top: 0; }
+
+.input {
+  background: var(--light-blue-bg); border: 1px solid var(--border); border-radius: var(--r-button);
+  font-size: var(--fs-body); font-family: inherit; color: var(--text);
+  padding: 14px; width: 100%;
+}
+.input::placeholder { color: var(--text-secondary); }
+
+.warn-banner {
+  display: flex; gap: var(--sp-sm); align-items: flex-start;
+  background: var(--red-bg); border: 1px solid var(--danger-red); border-radius: var(--r-card);
+  padding: var(--sp-md); color: var(--danger-red);
+  font-size: 16px; font-weight: 700; line-height: 1.45; flex: none;
+}
+.warn-banner.info    { background: var(--light-blue-bg); border-color: var(--border); color: var(--heading); }
+.warn-banner.caution { background: var(--orange-bg); border-color: var(--warning-orange); color: var(--warning-orange); }
+
+.t-body      { font-size: var(--fs-body); }
+.t-emph      { font-size: var(--fs-emphasis); font-weight: 700; }
+.t-title     { font-size: var(--fs-title); font-weight: 700; color: var(--heading); }
+.t-secondary { color: var(--text-secondary); }
+.t-blue      { color: var(--primary-blue); }
+.bold        { font-weight: 700; }
+.stack       { display: flex; flex-direction: column; }
+.grow        { flex: 1; min-width: 0; }
+.gap-xs { gap: var(--sp-xs); } .gap-sm { gap: var(--sp-sm); }
+.gap-md { gap: var(--sp-md); } .gap-lg { gap: var(--sp-lg); }
+
+/* ==========================================================================
+   web.css 사본 — 이 기능 전용 컴포넌트. 목업의 클래스·하위 구조를 그대로 승계.
+   (뷰어 전용이던 .wf-fold / .wf-urlbar / .hub-hero / .callout 등은 뺐다)
+   ========================================================================== */
+.fx-ico    { width: 24px; height: 24px; flex: none; }
+.fx-ico.sm { width: 20px; height: 20px; }
+.fx-ico.lg { width: 28px; height: 28px; }
+.fx-ico.xl { width: 40px; height: 40px; }
+
+.fx-col   { display: flex; flex-direction: column; flex: none; min-width: 0; }
+.fx-row   { display: flex; align-items: center; flex: none; min-width: 0; flex-wrap: wrap; row-gap: var(--sp-xs); }
+.fx-row.top { align-items: flex-start; flex-wrap: nowrap; }
+.fx-center{ text-align: center; }
+.fx-cap   { font-size: 14px; line-height: 1.55; color: var(--text-secondary); }
+.fx-cap16 { font-size: 16px; line-height: 1.6; color: var(--text-secondary); }
+.fx-link  { font-size: 16px; font-weight: 700; color: var(--primary-blue); flex: none; }
+.fx-divider { height: 1px; background: var(--border); flex: none; margin: var(--sp-md) 0; }
+.fx-lead  { font-size: var(--fs-body); line-height: 1.65; }
+.fx-spacer { flex: 1; min-height: var(--sp-md); }
+
+.fx-pill {
+  position: relative; flex: none;
+  width: 30px; height: 30px; border-radius: var(--r-pill);
+  background: var(--card-bg); border: 2px solid var(--border);
+}
+.fx-pill.oval { width: 38px; height: 24px; }
+.fx-pill.score::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 58%; height: 2px; background: var(--border);
+}
+
+.fx-strip { display: flex; align-items: stretch; flex: none; }
+.fx-strip > div { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.fx-strip > div + div { border-left: 1px solid var(--border); }
+.fx-strip b { font-size: var(--fs-emphasis); color: var(--heading); }
+.fx-strip span { font-size: 14px; color: var(--text-secondary); font-weight: 700; }
+
+.fx-chips { display: flex; flex-wrap: wrap; margin: 0 -6px; flex: none; }
+.fx-chips.tight { margin: 0; gap: 8px; }
+.chip.wf { min-height: 48px; font-size: 17px; padding: 0 16px; margin: 5px; }
+
+/* ---------- 랜딩 히어로 ---------- */
+.wf-hero {
+  flex: none;
+  background: linear-gradient(150deg, var(--primary-navy), var(--primary-fill));
+  border-radius: var(--r-card);
+  padding: var(--sp-lg);
+  color: #fff;
+  display: flex; flex-direction: column; gap: var(--sp-md);
+}
+.wf-hero .h-eyebrow { font-size: 14px; font-weight: 700; letter-spacing: .4px; color: #A5F3FC; }
+.wf-hero .h-title   { font-size: 30px; font-weight: 800; line-height: 1.35; letter-spacing: -0.5px; }
+.wf-hero .h-sub     { font-size: 16px; line-height: 1.7; color: #DCD3FA; }
+
+.wf-trust { display: flex; gap: var(--sp-sm); flex: none; }
+.wf-trust > div {
+  flex: 1;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--r-button);
+  padding: 12px 6px;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  text-align: center;
+}
+.wf-trust b    { font-size: 15px; font-weight: 800; color: var(--heading); }
+.wf-trust span { font-size: 12px; color: var(--text-secondary); font-weight: 600; line-height: 1.4; }
+
+/* ---------- 상단 진행 표시 ---------- */
+.wf-steps { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.wf-steps .s { height: 6px; flex: 1 1 0; min-width: 20px; border-radius: var(--r-pill); background: var(--border); }
+.wf-steps .s.on   { background: var(--primary-blue); }
+.wf-steps .s.done { background: var(--secondary-blue); }
+.wf-steplabel { font-size: 14px; font-weight: 700; color: var(--text-secondary); flex: none; }
+
+/* ---------- 건기식 선택 그리드 ---------- */
+.wf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; flex: none; }
+.wf-tile {
+  background: var(--card-bg); border: 2px solid var(--border); border-radius: var(--r-card);
+  padding: 14px 6px 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  text-align: center; position: relative;
+  min-height: 96px; justify-content: center;
+  font-family: inherit; cursor: pointer;
+}
+.wf-tile .t-name  { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.35; }
+.wf-tile .t-emoji { font-size: 26px; line-height: 1; }
+.wf-tile.on { border-color: var(--primary-blue); background: var(--light-blue-bg); }
+.wf-tile.on .t-name { color: var(--primary-blue); }
+.wf-tile.on::after {
+  content: "✓";
+  position: absolute; top: -8px; right: -8px;
+  width: 26px; height: 26px; border-radius: var(--r-pill);
+  background: var(--primary-fill); color: #fff;
+  font-size: 15px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 6px rgba(124,58,237,.4);
+}
+
+/* ---------- 하단 CTA 바 — 목업에선 폰 안 고정, 여기선 화면 하단에 붙는 sticky ---------- */
+.wf-cta {
+  flex: none; background: var(--card-bg); border-top: 1px solid var(--border);
+  padding: 12px var(--sp-lg) var(--sp-md);
+  position: sticky; bottom: 0; z-index: 40;
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, .4);
+}
+.wf-cta .c-count {
+  font-size: 15px; font-weight: 700; color: var(--text-secondary);
+  margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+}
+.wf-cta .c-count b { color: var(--primary-blue); }
+.wf-cta .big-btn { margin: 0; }
+
+/* ---------- 분석 중 ---------- */
+.wf-scan {
+  width: 132px; height: 132px; border-radius: var(--r-pill);
+  background: var(--light-blue-bg); border: 3px solid var(--secondary-blue);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--primary-blue);
+  margin: 0 auto; flex: none; position: relative;
+}
+.wf-scan::after { content: ""; position: absolute; inset: -14px; border-radius: var(--r-pill); border: 2px solid var(--border); }
+.wf-lines { display: flex; flex-direction: column; gap: 10px; flex: none; }
+.wf-line {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 16px; line-height: 1.5; color: var(--text-secondary); font-weight: 600;
+}
+.wf-line.done { color: var(--text); }
+.wf-line.now  { color: var(--primary-blue); font-weight: 700; }
+.wf-line .l-dot {
+  width: 22px; height: 22px; border-radius: var(--r-pill); flex: none;
+  border: 2px solid var(--border); background: var(--card-bg);
+  display: flex; align-items: center; justify-content: center;
+}
+.wf-line.done .l-dot { background: var(--secondary-blue); border-color: var(--secondary-blue); color: var(--screen-bg); }
+.wf-line.now  .l-dot { border-color: var(--primary-blue); border-width: 3px; }
+
+/* ---------- 리포트 최상단 판정 ---------- */
+.wf-verdict {
+  flex: none; border-radius: var(--r-card); padding: var(--sp-lg) var(--sp-md);
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-sm);
+  text-align: center;
+}
+.wf-verdict .v-num   { font-size: var(--fs-hero); font-weight: 800; line-height: 1.1; }
+.wf-verdict .v-label { font-size: var(--fs-emphasis); font-weight: 800; }
+.wf-verdict .v-sub   { font-size: 15px; line-height: 1.6; }
+.wf-verdict.warn { background: var(--orange-bg); border: 2px solid var(--warning-orange); }
+.wf-verdict.warn .v-num, .wf-verdict.warn .v-label { color: var(--warning-orange); }
+.wf-verdict.warn .v-sub { color: #F3D9BC; }
+/* 주의 없음 — 초록을 쓰지 않는다. "안전" 오인 방지 (README §4.3). 이 변형에서도 동일. */
+.wf-verdict.clear { background: var(--light-blue-bg); border: 2px solid var(--border); }
+.wf-verdict.clear .v-num, .wf-verdict.clear .v-label { color: var(--heading); }
+.wf-verdict.clear .v-sub { color: var(--text-secondary); }
+
+/* ---------- 상호작용 카드 ---------- */
+.wf-find {
+  flex: none; background: var(--card-bg);
+  border: 1px solid var(--border); border-left: 5px solid var(--border);
+  border-radius: 0 var(--r-card) var(--r-card) 0;
+  padding: var(--sp-md);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.wf-find.lv1 { border-left-color: var(--danger-red); }
+.wf-find.lv2 { border-left-color: var(--warning-orange); }
+.wf-find.lv3 { border-left-color: var(--check-blue); }
+.wf-find.lv4 { border-left-color: #CBD5E1; }
+.wf-find .f-lv {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px; border-radius: var(--r-pill);
+  font-size: 14px; font-weight: 800; align-self: flex-start; flex: none;
+}
+.wf-find.lv1 .f-lv { background: var(--red-bg);        color: var(--danger-red); }
+.wf-find.lv2 .f-lv { background: var(--orange-bg);     color: var(--warning-orange); }
+.wf-find.lv3 .f-lv { background: var(--blue-bg);       color: var(--check-blue); }
+.wf-find.lv4 .f-lv { background: rgba(255,255,255,.07); color: var(--text-secondary); }
+
+.wf-pair { display: flex; align-items: center; gap: 8px; flex: none; flex-wrap: wrap; row-gap: 6px; }
+.wf-pair .p-item {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--screen-bg); border: 1px solid var(--border);
+  border-radius: var(--r-button); padding: 7px 11px;
+  font-size: 16px; font-weight: 700; color: var(--text);
+}
+.wf-pair .p-x { font-size: 18px; font-weight: 800; color: var(--text-secondary); flex: none; }
+
+.wf-find .f-what   { font-size: 17px; line-height: 1.6; color: var(--text); }
+.wf-find .f-what b { color: var(--heading); }
+.wf-find .f-do {
+  display: flex; gap: 8px; align-items: flex-start;
+  background: var(--screen-bg); border-radius: var(--r-button);
+  padding: 11px 13px;
+  font-size: 16px; line-height: 1.6; font-weight: 700; color: var(--heading);
+}
+.wf-find .f-do svg { width: 20px; height: 20px; flex: none; margin-top: 2px; color: var(--primary-blue); }
+
+/* ---------- 복용 시간표 ---------- */
+.wf-time { display: flex; flex-direction: column; flex: none; }
+.wf-time .tm-row { display: flex; gap: var(--sp-md); align-items: flex-start; padding: 13px 0; }
+.wf-time .tm-row + .tm-row { border-top: 1px solid var(--border); }
+.wf-time .tm-when {
+  width: 78px; flex: none;
+  font-size: 16px; font-weight: 800; color: var(--heading);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.wf-time .tm-when span { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+.wf-time .tm-what { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.wf-time .tm-what .n   { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.5; }
+.wf-time .tm-what .why { font-size: 14px; line-height: 1.5; color: var(--warning-orange); font-weight: 700; }
+
+/* ---------- 하단 고지 (모든 리포트 필수) ---------- */
+.wf-disclaim {
+  flex: none;
+  background: #18213A; border: 1px solid var(--border); border-radius: var(--r-button);
+  padding: 13px 15px;
+  font-size: 13px; line-height: 1.65; color: var(--text-secondary);
+}
+.wf-disclaim b { color: var(--text); }
+
+/* ---------- 웹 vs 앱 비교 ---------- */
+.wf-compare { display: flex; flex-direction: column; flex: none; }
+.wf-compare .cp-row { display: flex; align-items: center; gap: var(--sp-sm); padding: 11px 0; font-size: 16px; line-height: 1.5; }
+.wf-compare .cp-row + .cp-row { border-top: 1px solid var(--border); }
+.wf-compare .cp-name { flex: 1; min-width: 0; font-weight: 700; color: var(--text); }
+.wf-compare .cp-web, .wf-compare .cp-app { width: 46px; flex: none; display: flex; align-items: center; justify-content: center; }
+.wf-compare .cp-web svg { width: 20px; height: 20px; color: #CBD5E1; }
+/* 초록 금지 — 「앱에서 됩니다」라는 기능 표시일 뿐이지만, 주의 0건 리포트와 같은
+   페이지에 초록 체크가 줄지어 있으면 「다 괜찮다」는 인상을 준다.
+   이 제품은 리포트 어디에도 초록을 쓰지 않는다. */
+.wf-compare .cp-app svg { width: 22px; height: 22px; color: var(--primary-blue); }
+.wf-compare .cp-head { font-size: 13px; font-weight: 800; color: var(--text-secondary); padding-bottom: 8px; }
+.wf-compare .cp-head .cp-app { color: var(--primary-blue); }
+
+/* ---------- 바텀시트 ---------- */
+.wf-dim { position: fixed; inset: 0; background: rgba(0, 0, 0, .6); z-index: 300; border: none; padding: 0; }
+.wf-sheet {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: 0;
+  width: 100%; max-width: 430px; z-index: 310;
+  background: var(--card-bg);
+  border-radius: 22px 22px 0 0;
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, .5);
+  padding: var(--sp-md) var(--sp-lg) var(--sp-lg);
+  display: flex; flex-direction: column; gap: var(--sp-md);
+  max-height: 86vh; overflow-y: auto;
+}
+.wf-sheet .sh-grab { width: 44px; height: 5px; border-radius: var(--r-pill); background: var(--border); margin: 0 auto 2px; flex: none; }
+
+/* ---------- 카메라 뷰 ---------- */
+.wf-cam { flex: 1; background: #232B3A; position: relative; display: flex; align-items: center; justify-content: center; min-height: 340px; }
+.wf-cam .cm-guide {
+  width: 74%; height: 46%;
+  border: 3px dashed rgba(255,255,255,.72); border-radius: var(--r-card);
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,.86);
+  font-size: 16px; font-weight: 700; text-align: center; line-height: 1.6;
+  padding: var(--sp-md);
+}
+.wf-cam .cm-hint {
+  position: absolute; left: var(--sp-md); right: var(--sp-md); bottom: var(--sp-md);
+  background: rgba(0,0,0,.55); color: #fff;
+  border-radius: var(--r-button); padding: 11px 14px;
+  font-size: 14px; line-height: 1.55; text-align: center; font-weight: 600;
+}
+.wf-cam .cm-demo {
+  position: absolute; left: var(--sp-md); right: var(--sp-md); top: var(--sp-md);
+  background: #9A3412; color: #FFE8D6;
+  border-radius: var(--r-button); padding: 9px 12px;
+  font-size: 13px; font-weight: 800; text-align: center;
+}
+
+/* ==========================================================================
+   프로토타입 전용 (목업에 없던 것 — 전부 wf- 접두사)
+   ========================================================================== */
+.wf-searchinput {
+  border: none; background: transparent; outline: none;
+  font-family: inherit; font-size: var(--fs-body); font-weight: 700; color: var(--text);
+  width: 100%; padding: 0;
+}
+.wf-searchinput::placeholder { font-weight: 400; color: var(--text-secondary); }
+
+.wf-toast {
+  position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%);
+  z-index: 400;
+  background: rgba(30, 27, 75, .96); color: #fff;
+  border-radius: var(--r-pill); padding: 12px 20px;
+  font-size: 15px; font-weight: 700; line-height: 1.5;
+  max-width: 92vw; text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+}
+.wf-toast[hidden] { display: none; }
+
+.wf-anchor { scroll-margin-top: 52px; }
+.wf-x { background: none; border: none; font-family: inherit; cursor: pointer; padding: 0 0 0 6px; color: var(--text-secondary); font-size: 16px; font-weight: 800; }
+
+/* ==========================================================================
+   공유 카드 — 이 3040 변형의 핵심. 세로로 긴(9:16에 가까운) 카드를 스크린샷해서
+   인스타 스토리에 올리는 것을 전제로 한다. 이미지·canvas 는 만들지 않는다 —
+   순수 CSS로만 그린다 (외부 요청 0건 제약).
+   판정과 무관하게 항상 같은(바이올렛·시안) 톤을 쓴다 — "주의 0건"이어도
+   초록·체크 배지로 바뀌지 않게 하기 위한 의도적인 설계다.
+   ========================================================================== */
+.wf-sharecard {
+  width: 100%; max-width: 340px; margin: 0 auto;
+  aspect-ratio: 9 / 16;
+  background: linear-gradient(165deg, #1B1533 0%, #241E42 45%, #142433 100%);
+  border: 1px solid var(--border); border-radius: var(--r-card);
+  padding: var(--sp-lg);
+  display: flex; flex-direction: column; justify-content: space-between; gap: var(--sp-md);
+  color: var(--text);
+  overflow: hidden; position: relative; flex: none;
+}
+.wf-sharecard::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at 82% 0%, rgba(34, 211, 238, .20), transparent 55%),
+              radial-gradient(circle at 8% 100%, rgba(139, 92, 246, .28), transparent 55%);
+}
+.wf-sharecard > * { position: relative; z-index: 1; }
+
+/* ---------- 유형 공개 (분석 직후 첫 블록) ---------- */
+.wf-reveal {
+  flex: none; text-align: center;
+  background: linear-gradient(160deg, #1E1740 0%, #241E42 55%, #16263A 100%);
+  border: 1px solid var(--border); border-radius: var(--r-card);
+  padding: var(--sp-lg) var(--sp-md);
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.rv-cap   { font-size: 12px; font-weight: 700; color: var(--text-secondary); letter-spacing: .3px; }
+.rv-emoji { font-size: 46px; line-height: 1.2; }
+.rv-name  { font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: -.4px; }
+.rv-line  { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
+
+/* ---------- 4축 레이더 ---------- */
+.rd-wrap { position: relative; width: 100%; max-width: 210px; margin: 0 auto; aspect-ratio: 1; }
+.rd { width: 100%; height: 100%; display: block; overflow: visible; }
+.rd-ring { fill: none; stroke: rgba(255,255,255,.13); stroke-width: 1; }
+.rd-ax   { stroke: rgba(255,255,255,.10); stroke-width: 1; }
+.rd-area { fill: rgba(139,92,246,.38); stroke: #A78BFA; stroke-width: 2; stroke-linejoin: round; }
+.rd-dot  { fill: #22D3EE; }
+.rd-dot.off { fill: rgba(255,255,255,.22); }
+.rd-l {
+  position: absolute; font-size: 11px; font-weight: 700; color: var(--text-secondary);
+  white-space: nowrap;
+}
+.rd-l.t { top: -4px;  left: 50%; transform: translateX(-50%); }
+.rd-l.b { bottom: -4px; left: 50%; transform: translateX(-50%); }
+.rd-l.l { left: -6px;  top: 50%; transform: translateY(-50%); }
+.rd-l.r { right: -6px; top: 50%; transform: translateY(-50%); }
+
+.sc-badge {
+  align-self: flex-start;
+  background: rgba(255,255,255,.08); border: 1px solid var(--border);
+  border-radius: var(--r-pill); padding: 6px 14px;
+  font-size: 12px; font-weight: 700; color: var(--text-secondary);
+}
+.sc-type  { display: flex; align-items: center; gap: 10px; }
+.sc-emoji { font-size: 38px; line-height: 1; }
+.sc-tname { font-size: 30px; font-weight: 800; color: var(--text); letter-spacing: -.5px; }
+.sc-tline { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
+.sc-bot   { display: flex; flex-direction: column; gap: 10px; flex: none; }
+.sc-top { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.sc-big { font-size: 78px; font-weight: 800; line-height: 1; color: var(--text); display: flex; align-items: baseline; gap: 8px; }
+.sc-big-unit { font-size: 24px; font-weight: 700; color: var(--text-secondary); }
+.sc-label { font-size: 22px; font-weight: 700; color: var(--heading); line-height: 1.4; }
+
+.sc-mid { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; gap: 12px; min-height: 0; }
+
+/* 대조한 쌍 = 점 하나. 이름은 안 실리고 규모만 보인다. */
+.sc-grid { display: flex; flex-wrap: wrap; gap: 9px; }
+.sc-dot {
+  width: 14px; height: 14px; border-radius: var(--r-pill);
+  background: rgba(255,255,255,.15); flex: none;
+}
+.sc-dot.sc-warn  { background: var(--danger-red);     box-shadow: 0 0 10px rgba(252,165,165,.55); }
+.sc-dot.sc-time  { background: var(--warning-orange); box-shadow: 0 0 10px rgba(253,186,116,.5); }
+.sc-dot.sc-check { background: var(--check-blue);     box-shadow: 0 0 10px rgba(125,211,252,.5); }
+
+.sc-stat { font-size: 13px; color: var(--text-secondary); font-weight: 600; line-height: 1.5; }
+.sc-stat b { color: var(--text); }
+.sc-more { color: var(--text-secondary); font-weight: 600; }
+
+.sc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sc-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,.07); border: 1px solid var(--border);
+  border-radius: var(--r-pill); padding: 6px 11px;
+  font-size: 12px; font-weight: 800; color: var(--text);
+}
+.sc-chip i { width: 7px; height: 7px; border-radius: var(--r-pill); flex: none; }
+.sc-chip.sc-warn  i { background: var(--danger-red); }
+.sc-chip.sc-time  i { background: var(--warning-orange); }
+.sc-chip.sc-check i { background: var(--check-blue); }
+.sc-chip.sc-none { color: var(--text-secondary); font-weight: 700; }
+
+.sc-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-sm); flex: none; }
+.sc-word { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -.2px; }
+.sc-tag { font-size: 11px; font-weight: 700; color: var(--text-secondary); }
+
+.wf-sharehint { font-size: 13px; color: var(--text-secondary); text-align: center; line-height: 1.5; }
+
+/* ---------- 하단 부차 훅 — 본인 확인이 주 시나리오이므로 작게 둔다 ---------- */
+.wf-parenthook {
+  flex: none; background: none; border: none; font-family: inherit; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  padding: 10px; margin-top: 4px;
+  font-size: 13px; font-weight: 600; color: var(--text-secondary);
+}
+</style>
+</head>
+<body>
+
+<!-- 아이콘 스프라이트 — mockup/_scaffold.html 사본. 인라인이라 외부 요청이 없다. -->
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></symbol>
+  <symbol id="i-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.29 3.86-8.18 14a2 2 0 0 0 1.71 3h16.36a2 2 0 0 0 1.71-3l-8.18-14a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-alert-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.8 10A10 10 0 1 1 17 3.34"/><path d="m9 11 3 3L22 4"/></symbol>
+  <symbol id="i-shield-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M15 2v5h5"/><path d="M9 13h6"/><path d="M9 17h6"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
+  <symbol id="i-smartphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18.5h2"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6 12 3l3 3"/><path d="M12 3v13"/><path d="M6 12H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-1"/></symbol>
+  <symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16"/><path d="m18 14-6 6-6-6"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h12"/></symbol>
+</svg>
+
+<!-- SPEC §1 — 항상 보이는 데모 표식. 약사 검수 전에는 제거하지 않는다. -->
+<div class="demo-strip" role="note">
+  <svg aria-hidden="true"><use href="#i-alert-triangle"/></svg>
+  프로토타입 — 검수 전 데모입니다. 실제 복약 판단에 쓰지 마세요.
+</div>
+
+<main class="app" id="app"></main>
+<div id="sheet-root"></div>
+<div id="toast" class="wf-toast" hidden></div>
+
+<script>
+"use strict";
+(function () {
+
+/* ==========================================================================
+   1. 입력 카탈로그 (SPEC §3)
+   ========================================================================== */
+/* 3040 변형 — 영양제가 먼저 나오므로 SUPP_LIST 를 먼저 두고 싶지만, analyze()·
+   buildSchedule() 등 아래 코드가 "처방약 다음 건기식" 순서를 가정하지 않고
+   id 로만 대조하므로 선언 순서 자체는 상관없다. 화면 순서는 §2. 화면 조각의
+   RENDERERS/ACTIONS 쪽에서 바뀐다. */
+const RX_LIST = [
+  { id: 'pill',     name: '피임약' },
+  { id: 'psy',      name: '항우울제·수면제' },
+  { id: 'gi',       name: '위장약' },
+  { id: 'allergy',  name: '알레르기약' },
+  { id: 'acne',     name: '여드름약(이소트레티노인)' },
+  { id: 'thy',      name: '갑상선약' },
+  { id: 'chol',     name: '고지혈증약' },
+  { id: 'hairloss', name: '탈모약' },
+  { id: 'pain',     name: '통증·소염제' },
+  { id: 'bp',       name: '혈압약' },
+  { id: 'none',     name: '없어요' }
+];
+
+const SUPP_LIST = [
+  { id: 'omega3',  name: '오메가3',            emoji: '🐟' },
+  { id: 'vitd',    name: '비타민D',             emoji: '☀️' },
+  { id: 'mag',     name: '마그네슘',            emoji: '🦴' },
+  { id: 'probio',  name: '유산균·프로바이오틱스', emoji: '🦠' },
+  { id: 'multi',   name: '종합비타민',          emoji: '💊' },
+  { id: 'milk',    name: '밀크씨슬',            emoji: '🌿' },
+  { id: 'lutein',  name: '루테인',              emoji: '👁️' },
+  { id: 'collagen',name: '콜라겐',              emoji: '✨' },
+  { id: 'zinc',    name: '아연',                emoji: '⚡' },
+  { id: 'iron',    name: '철분',                emoji: '🩸' },
+  { id: 'redgin',  name: '홍삼',                emoji: '🫚' },
+  { id: 'protein', name: '단백질보충제',         emoji: '🥤' }
+];
+
+const AGE_LIST = [
+  { id: '20', name: '20대' },
+  { id: '30', name: '30대' },
+  { id: '40', name: '40대' },
+  { id: '50', name: '50대' },
+  { id: '60', name: '60대 이상' }
+];
+
+const COND_LIST = [
+  { id: 'preg',   name: '임신·수유 중' },
+  { id: 'kidney', name: '신장 질환' },
+  { id: 'liver',  name: '간 질환' },
+  { id: 'none',   name: '해당 없음' }
+];
+
+/* 복용 시간대 (SPEC §5) */
+const SLOTS = [
+  { id: 'morningEmpty', label: '아침 공복', time: '오전 7:00' },
+  { id: 'morning',      label: '아침 식후', time: '오전 8:00' },
+  { id: 'lunch',        label: '점심 식후', time: '오후 12:30' },
+  { id: 'evening',      label: '저녁 식후', time: '오후 7:00' },
+  { id: 'night',        label: '자기 전',   time: '오후 10:00' }
+];
+
+/* ==========================================================================
+   ⚠ 검수 전 — 약사 검수 필요. 이 블록 전체가 3040 변형을 위해 새로 쓴 예시
+   데이터다 (원본 index.html 의 처방약·건기식 조합과 다르다 — 카탈로그를
+   피임약/항우울제/여드름약/탈모약 등으로 바꾸면서 상호작용 지식도 전부
+   다시 짰다). 약사 검수 없이 실제 서비스에 내보내면 안 된다.
+   --------------------------------------------------------------------------
+   상호작용 판정에 쓰이는 지식은 전부 이 블록 안에만 있다. 화면 코드에는
+   조합에 대한 if 문이 하나도 없다. 검수 뒤에는 아래 5개 상수만 통째로 갈아
+   끼우면 되고, 렌더링·시간표·집계 코드는 손대지 않는다.
+
+   등급: warn(주의·빨강) / time(시간 조정·주황) / check(확인 권장·파랑) / info(알아두기·회색)
+   time 규칙은 suppSlot(건기식을 옮길 시간대)과 why(시간표에 붙일 주황 한 줄)를 함께 갖는다.
+   ========================================================================== */
+
+/* SPEC §5 기본 배치 — RX_LIST·SUPP_LIST 의 'none' 을 뺀 모든 id가 여기 하나씩
+   있어야 한다. 빠지면 그 항목을 고른 사람의 분석에서 buildSchedule() 이 죽는다. */
+const DEFAULT_SLOT = {
+  thy: 'morningEmpty', probio: 'morningEmpty',
+  bp: 'morning', gi: 'morning', pain: 'morning', pill: 'morning', allergy: 'morning',
+  redgin: 'morning', zinc: 'morning',
+  chol: 'evening', hairloss: 'evening', acne: 'evening', psy: 'night',
+  omega3: 'evening', multi: 'evening', vitd: 'evening', lutein: 'evening', milk: 'evening',
+  mag: 'lunch', iron: 'lunch', protein: 'lunch',
+  collagen: 'night'
+};
+
+/* 처방약 × 건기식 — 검수 전 — 약사 검수 필요 */
+const RULES = [
+  /* 주의 (warn) — 이소트레티노인은 비타민A 유도체라, 비타민A 과잉 위험이
+     그 자체로 잘 알려진 조합이다. 다른 조합처럼 근거가 갈리지 않는다. */
+  { rx: 'acne', supp: 'multi', level: 'warn',
+    what: '이소트레티노인은 <b>비타민A 유도체</b>입니다. 종합비타민에 든 비타민A가 더해지면 두통·눈 건조·간수치 상승 같은 <b>비타민A 과잉 증상</b> 위험이 커질 수 있어요.',
+    how:  '<b>스스로 판단하지 마세요.</b> 처방받은 병원(피부과)에 비타민A가 든 영양제를 같이 먹고 있다고 꼭 말씀해 주세요.' },
+
+  /* 시간 조정 (time) — 흡수 방해는 성분(철분·마그네슘 등) 문제라 카탈로그가
+     바뀌어도 갑상선약·위장약 축은 그대로 유효하다 */
+  { rx: 'thy', supp: 'iron', level: 'time', suppSlot: 'lunch', why: '갑상선약과 4시간 이상 띄우기',
+    what: '철분이 갑상선약의 <b>흡수를 방해</b>합니다.',
+    how:  '<b>시간만 띄우면 해결됩니다.</b> 갑상선약을 드시고 최소 4시간 뒤에 철분을 드세요.' },
+  { rx: 'thy', supp: 'mag', level: 'time', suppSlot: 'lunch', why: '갑상선약과 4시간 이상 띄우기',
+    what: '마그네슘이 갑상선약의 <b>흡수를 방해</b>합니다. 같은 시간에 드시면 약효가 떨어질 수 있어요.',
+    how:  '<b>시간만 띄우면 해결됩니다.</b> 갑상선약은 아침 공복에, 마그네슘은 최소 4시간 뒤에 드세요.' },
+  { rx: 'thy', supp: 'multi', level: 'time', suppSlot: 'lunch', why: '갑상선약과 4시간 이상 띄우기',
+    what: '종합비타민에 든 칼슘·철분이 갑상선약의 <b>흡수를 방해</b>할 수 있습니다.',
+    how:  '<b>시간만 띄우면 해결됩니다.</b> 갑상선약과 최소 4시간 간격을 두세요.' },
+  { rx: 'gi', supp: 'iron', level: 'time', suppSlot: 'lunch', why: '위장약과 2시간 이상 띄우기',
+    what: '위산을 줄이는 약은 철분 <b>흡수를 떨어뜨립니다.</b>',
+    how:  '위장약과 2시간 이상 간격을 두고 철분을 드세요.' },
+  { rx: 'gi', supp: 'mag', level: 'time', suppSlot: 'lunch', why: '위장약과 2시간 이상 띄우기',
+    what: '제산 성분과 마그네슘이 서로 <b>흡수를 방해</b>할 수 있습니다.',
+    how:  '위장약과 2시간 이상 간격을 두세요.' },
+
+  /* 확인 권장 (check) — 근거가 제한적인 것 */
+  { rx: 'chol', supp: 'milk', level: 'check',
+    what: '둘 다 간에서 <b>같은 경로로 분해</b>됩니다. 관련 보고가 있지만 근거는 아직 제한적이에요.',
+    how:  '다음 진료나 약국에 가실 때 한 번 여쭤보시면 좋습니다.' },
+  { rx: 'bp', supp: 'redgin', level: 'check',
+    what: '홍삼이 <b>혈압에 영향</b>을 준다는 보고가 있습니다.',
+    how:  '혈압을 평소보다 자주 재 보시고, 변화가 있으면 알리세요.' },
+  { rx: 'psy', supp: 'redgin', level: 'check',
+    what: '홍삼이 수면·각성에 영향을 준다는 보고가 있습니다.',
+    how:  '잠드는 데 변화가 있으면 진료 때 알려 주세요.' },
+  { rx: 'pain', supp: 'omega3', level: 'check',
+    what: '소염진통제와 오메가3 모두 <b>출혈 경향</b>을 조금 높일 수 있습니다.',
+    how:  '멍이 늘거나 속쓰림이 있으면 진료 때 알려 주세요.' },
+  { rx: 'pill', supp: 'milk', level: 'check',
+    what: '밀크씨슬과 피임약 모두 간에서 <b>같은 경로로 대사</b>될 수 있습니다. 근거는 아직 제한적이에요.',
+    how:  '다음 진료나 약국에 가실 때 한 번 여쭤보시면 좋습니다.' }
+];
+
+/* 처방약끼리. 등급은 check 고정이며 절대 warn 으로 올리지 않는다.
+   이미 처방 단계에서 DUR을 통과한 조합이라, 강하게 경고하면 앱이 의사 처방을
+   사후 부정하는 화면이 된다. (README §P3) — 검수 전 — 약사 검수 필요 */
+const RX_PAIR_RULES = [
+  { a: 'psy', b: 'pain', level: 'check',
+    what: '둘 다 위장에 부담을 주고 출혈 경향을 높일 수 있는 조합입니다.',
+    how:  '<b>의사가 알고 처방했을 수 있습니다.</b> 다음 진료 때 한 번 확인해 보세요.' },
+  { a: 'thy', b: 'gi', level: 'check',
+    what: '위장약이 갑상선약의 흡수에 영향을 줄 수 있습니다.',
+    how:  '<b>의사가 알고 처방했을 수 있습니다.</b> 다음 진료 때 확인해 보세요.' },
+  { a: 'allergy', b: 'psy', level: 'check',
+    what: '둘 다 <b>졸음을 유발</b>할 수 있는 조합입니다. 함께 드시면 졸음이 더 심해질 수 있어요.',
+    how:  '<b>의사가 알고 처방했을 수 있습니다.</b> 운전이나 기계 조작 전에는 특히 주의해 주세요.' }
+];
+
+/* 단독 알아두기. when 의 조건이 모두 참일 때만 뜬다.
+   rx/supps/conds = 모두 포함되어야 함, rxNot = 하나도 없어야 함, condsAny = 하나 이상.
+   level 을 지정하지 않으면 info(회색). 임신 관련 두 건은 근거가 이미 확립된
+   금기라 info 가 아니라 warn 으로 올렸다 — 검수 전 — 약사 검수 필요 */
+const INFO_RULES = [
+  { id: 'multi-k', when: { supps: ['multi'] }, pair: ['종합비타민'],
+    what: '종합비타민에는 비타민K가 들어 있는 경우가 많습니다. 지금 드시는 약과는 문제가 없지만, 나중에 <b>와파린 같은 항응고제</b>를 드시게 되면 꼭 알리셔야 하는 항목이에요.',
+    how:  '지금 당장 하실 일은 없습니다.' },
+  { id: 'pill-b', when: { rx: ['pill'], supps: ['multi'] }, pair: ['피임약', '종합비타민'],
+    what: '피임약을 오래 드시면 <b>엽산·비타민B군</b>이 부족해질 수 있다는 보고가 있습니다. 종합비타민이 도움이 될 수 있어요.',
+    how:  '피로감이 심하면 진료 때 여쭤보세요.' },
+  { id: 'preg', when: { conds: ['preg'] }, pair: ['임신·수유 중'],
+    what: '임신·수유 중에는 영양제도 <b>성분과 용량</b>을 따로 확인해야 합니다.',
+    how:  '드시는 제품을 산부인과나 약국에 보여 주세요.' },
+  { id: 'organ', when: { condsAny: ['kidney', 'liver'] }, pair: ['신장·간 기능'],
+    what: '신장·간 기능이 떨어져 있으면 <b>같은 용량도 다르게 작용</b>할 수 있습니다.',
+    how:  '드시는 영양제 목록을 진료 때 그대로 보여 주세요.' },
+  { id: 'acne-preg', level: 'warn', when: { rx: ['acne'], conds: ['preg'] }, pair: ['여드름약(이소트레티노인)', '임신·수유 중'],
+    what: '이소트레티노인은 <b>임신 중 태아에 미치는 영향이 크다고 알려진 성분</b>입니다. 임신 계획이나 가능성이 있다면 반드시 처방 의사에게 먼저 확인하셔야 해요.',
+    how:  '<b>스스로 판단하지 마세요.</b> 처방받은 병원(피부과)에 임신·수유 여부를 바로 알려 주세요.' },
+  { id: 'hair-preg', level: 'warn', when: { rx: ['hairloss'], conds: ['preg'] }, pair: ['탈모약', '임신·수유 중'],
+    what: '탈모약 성분 중 일부는 <b>임신 중 태아에 영향을 줄 수 있다고 알려져 있어</b> 각별한 주의가 필요합니다.',
+    how:  '<b>스스로 판단하지 마세요.</b> 처방받은 병원에 임신·수유 여부나 임신 계획을 알려 주세요.' }
+];
+
+/* 이름 검색용 목록. 고르면 오른쪽 처방약 분류가 선택된다. 실제 제품명이되
+   카탈로그(RX_LIST)에 맞춰 새로 골랐다 — 검수 전 — 약사 검수 필요 */
+const DRUG_SEARCH = [
+  { name: '머시론정',                 rx: 'pill' },
+  { name: '야스민정',                 rx: 'pill' },
+  { name: '졸로프트정 50mg',          rx: 'psy' },
+  { name: '스틸녹스정 10mg',          rx: 'psy' },
+  { name: '넥시움정 20mg',            rx: 'gi' },
+  { name: '란스톤엘에프디티정 30mg',  rx: 'gi' },
+  { name: '지르텍정 10mg',            rx: 'allergy' },
+  { name: '클라리틴정',               rx: 'allergy' },
+  { name: '로아큐탄연질캡슐 10mg',    rx: 'acne' },
+  { name: '이소티논연질캡슐 10mg',    rx: 'acne' },
+  { name: '씬지로이드정 0.1mg',       rx: 'thy' },
+  { name: '신지로이드정 0.05mg',      rx: 'thy' },
+  { name: '크레스토정 10mg',          rx: 'chol' },
+  { name: '리피토정 20mg',            rx: 'chol' },
+  { name: '프로페시아정 1mg',         rx: 'hairloss' },
+  { name: '아보다트연질캡슐 0.5mg',   rx: 'hairloss' },
+  { name: '쎄레브렉스캡슐 200mg',     rx: 'pain' },
+  { name: '이지엔6프로연질캡슐',      rx: 'pain' },
+  { name: '아모잘탄정 5/50mg',        rx: 'bp' },
+  { name: '노바스크정 5mg',           rx: 'bp' }
+];
+
+/* 약봉투 사진의 "예시 인식 결과". 실제 OCR이 아니다.
+   셋 중 하나는 일부러 흐리게 읽힌 것으로 둔다. */
+const OCR_DEMO = [
+  { name: '지르텍정 10mg',     rx: 'allergy', sure: true,  note: '잘 읽혔어요' },
+  { name: '크레스토정 10mg',   rx: 'chol',    sure: true,  note: '잘 읽혔어요' },
+  { name: '씬지로0드정 0.1mg', rx: 'thy',     sure: false, note: '글자가 흐려서 확실하지 않아요' }
+];
+
+/* ========================= 규칙 데이터 블록 끝 ========================= */
+
+
+/* 등급별 표시 규약 (README §4.1) */
+const LEVELS = {
+  warn:  { cls: 'lv1', label: '주의',      icon: 'i-alert-triangle', doIcon: 'i-message' },
+  time:  { cls: 'lv2', label: '시간 조정',  icon: 'i-clock',          doIcon: 'i-check-circle' },
+  check: { cls: 'lv3', label: '확인 권장',  icon: 'i-alert-circle',   doIcon: 'i-message' },
+  info:  { cls: 'lv4', label: '알아두기',   icon: 'i-file-text',      doIcon: 'i-file-text' }
+};
+
+const DISCLAIMER =
+  '<b>이 결과는 진단이 아닙니다.</b> 복용량과 복용 시점, 기저질환은 반영하지 않았습니다. ' +
+  '약을 바꾸거나 끊는 판단은 반드시 의사·약사와 상의해 주세요. ' +
+  '이 프로토타입의 상호작용 정보는 <b>검수 전 예시 데이터</b>입니다.';
+
+
+/* ==========================================================================
+   2. 상태 — 화면 하나에 상태 기계 하나
+   ========================================================================== */
+const state = {
+  screen: 'landing',   // landing supp rx search cam ocr analyzing report (3040: profile 없음, rx 에 통합)
+  sheet: null,         // null | 'custom'
+  rx: [],              // 처방약 id (없어요 = 'none' 포함 가능)
+  supps: [],           // 건기식 id
+  customs: [],         // 직접 입력 문자열 — 분석 대상 아님
+  age: null,
+  conds: [],
+  q: '',               // 검색어
+  ocrPick: OCR_DEMO.map(function (o) { return o.sure; }), // 흐리게 읽힌 항목은 기본 제외
+  step: 0,             // 분석 중 진행 줄
+  appNotice: false,
+  copyFallback: ''
+};
+
+const app = document.getElementById('app');
+const sheetRoot = document.getElementById('sheet-root');
+const toastEl = document.getElementById('toast');
+
+
+/* ==========================================================================
+   3. 유틸
+   ========================================================================== */
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function nameOf(list, id) {
+  for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i].name;
+  return id;
+}
+const rxName   = function (id) { return nameOf(RX_LIST, id); };
+const suppName = function (id) { return nameOf(SUPP_LIST, id); };
+const condName = function (id) { return nameOf(COND_LIST, id); };
+function has(arr, id) { return arr.indexOf(id) !== -1; }
+
+/* 받침에 따라 은/는 을 고른다. 「은행잎는」 같은 문장이 나오면 화면 신뢰가 깎인다.
+   숫자·영문으로 끝나면 목업 표기(오메가3는)를 따라 '는'. */
+function eunNeun(word) {
+  const c = word.charCodeAt(word.length - 1);
+  if (c >= 0xAC00 && c <= 0xD7A3) return ((c - 0xAC00) % 28) ? '은' : '는';
+  return '는';
+}
+function ico(id, cls) { return '<svg class="' + (cls || 'fx-ico') + '" aria-hidden="true"><use href="#' + id + '"/></svg>'; }
+
+/* '없어요' / '해당 없음' 은 항목이 아니라 "항목 없음"의 표시다. 분석에서 걷어낸다. */
+function realRx()    { return state.rx.filter(function (id) { return id !== 'none'; }); }
+function realConds() { return state.conds.filter(function (id) { return id !== 'none'; }); }
+
+/* 대조 대상 개수 M 과 쌍의 수 K. 직접 입력 항목은 분석하지 않으므로 여기에 넣지 않는다. */
+function itemCount() { return realRx().length + state.supps.length; }
+function pairCount() { var m = itemCount(); return m * (m - 1) / 2; }
+
+let toastTimer = null;
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { toastEl.hidden = true; }, 2600);
+}
+
+
+/* ==========================================================================
+   4. 분석 — 규칙 데이터를 훑기만 한다. 조합 지식은 여기에 없다.
+   ========================================================================== */
+function analyze() {
+  const rx = realRx(), supps = state.supps, conds = realConds();
+  const findings = [];
+
+  RULES.forEach(function (r) {
+    if (has(rx, r.rx) && has(supps, r.supp)) {
+      findings.push({
+        level: r.level, pair: [rxName(r.rx), suppName(r.supp)],
+        what: r.what, how: r.how, supp: r.supp, why: r.why, suppSlot: r.suppSlot
+      });
+    }
+  });
+
+  RX_PAIR_RULES.forEach(function (r) {
+    if (has(rx, r.a) && has(rx, r.b)) {
+      findings.push({ level: r.level, pair: [rxName(r.a), rxName(r.b)], what: r.what, how: r.how });
+    }
+  });
+
+  INFO_RULES.forEach(function (r) {
+    const w = r.when;
+    const ok =
+      (w.rx    || []).every(function (id) { return has(rx, id); }) &&
+      (w.supps || []).every(function (id) { return has(supps, id); }) &&
+      (w.conds || []).every(function (id) { return has(conds, id); }) &&
+      (w.rxNot || []).every(function (id) { return !has(rx, id); }) &&
+      (!w.condsAny || w.condsAny.some(function (id) { return has(conds, id); }));
+    /* 3040 변형: INFO_RULES 에 level 을 지정하면(예: 임신 금기) info 가 아니라
+       그 등급으로 뜬다 — 근거가 이미 확립된 것까지 회색 "알아두기"로 묻히지
+       않게 하기 위한 확장이다. 지정이 없으면 원래대로 info. */
+    if (ok) findings.push({ level: r.level || 'info', pair: r.pair, what: r.what, how: r.how });
+  });
+
+  const order = { warn: 0, time: 1, check: 2, info: 3 };
+  findings.sort(function (a, b) { return order[a.level] - order[b.level]; });
+
+  const counts = { warn: 0, time: 0, check: 0, info: 0 };
+  findings.forEach(function (f) { counts[f.level]++; });
+
+  /* N 은 등급이 있는 것만 센다. 알아두기(info)는 "확인이 필요한 건수"가 아니다. */
+  return { findings: findings, counts: counts, n: counts.warn + counts.time + counts.check };
+}
+
+/* SPEC §5 — 기본 배치 후 time 규칙의 suppSlot 으로 옮긴다. */
+function buildSchedule(result) {
+  const bySupp = {};
+  result.findings.forEach(function (f) {
+    if (f.level !== 'time' || !f.supp) return;
+    if (!bySupp[f.supp]) bySupp[f.supp] = { slot: f.suppSlot, whys: [] };
+    if (bySupp[f.supp].whys.indexOf(f.why) === -1) bySupp[f.supp].whys.push(f.why);
+  });
+
+  const rows = {};
+  SLOTS.forEach(function (s) { rows[s.id] = []; });
+
+  realRx().forEach(function (id) {
+    rows[DEFAULT_SLOT[id]].push({ name: rxName(id), why: '' });
+  });
+  state.supps.forEach(function (id) {
+    const moved = bySupp[id];
+    const slot = moved ? moved.slot : DEFAULT_SLOT[id];
+    rows[slot].push({ name: suppName(id), why: moved ? moved.whys.join(' · ') : '' });
+  });
+
+  return SLOTS.filter(function (s) { return rows[s.id].length > 0; })
+              .map(function (s) { return { slot: s, items: rows[s.id] }; });
+}
+
+
+/* ==========================================================================
+   5. URL 해시 (SPEC §7) — #r=anti,thy&s=omega3,calmag&a=50&c=none
+      x= 는 직접 입력 항목. 스펙에 없지만 없으면 링크로 결과가 재현되지 않는다.
+   ========================================================================== */
+function buildHash() {
+  const parts = [
+    'r=' + state.rx.join(','),
+    's=' + state.supps.join(','),
+    'a=' + (state.age || ''),
+    'c=' + state.conds.join(',')
+  ];
+  if (state.customs.length) {
+    parts.push('x=' + state.customs.map(encodeURIComponent).join(','));
+  }
+  return '#' + parts.join('&');
+}
+function reportUrl() { return location.href.split('#')[0] + buildHash(); }
+
+function parseHash() {
+  const raw = location.hash.replace(/^#/, '');
+  if (!raw) return null;
+  const out = {};
+  raw.split('&').forEach(function (kv) {
+    const i = kv.indexOf('=');
+    if (i === -1) return;
+    out[kv.slice(0, i)] = kv.slice(i + 1);
+  });
+  if (!('r' in out) && !('s' in out) && !('a' in out) && !('c' in out)) return null;
+
+  const split = function (v, valid) {
+    if (!v) return [];
+    return v.split(',').filter(function (x) { return x && valid.indexOf(x) !== -1; });
+  };
+  const rxIds   = RX_LIST.map(function (o) { return o.id; });
+  const suppIds = SUPP_LIST.map(function (o) { return o.id; });
+  const ageIds  = AGE_LIST.map(function (o) { return o.id; });
+  const condIds = COND_LIST.map(function (o) { return o.id; });
+
+  return {
+    rx: split(out.r, rxIds),
+    supps: split(out.s, suppIds),
+    age: has(ageIds, out.a) ? out.a : null,
+    conds: split(out.c, condIds),
+    customs: out.x ? out.x.split(',').filter(Boolean).map(decodeURIComponent) : []
+  };
+}
+function applyParsed(p) {
+  state.rx = p.rx; state.supps = p.supps; state.age = p.age;
+  state.conds = p.conds; state.customs = p.customs;
+}
+
+
+/* ==========================================================================
+   6. 화면 전환 — history.pushState 로 뒤로가기를 살린다 (SPEC §2)
+   ========================================================================== */
+function go(screen, opts) {
+  opts = opts || {};
+  state.screen = screen;
+  state.sheet = opts.sheet || null;
+  state.appNotice = false;
+  state.copyFallback = '';
+
+  const url = (screen === 'report')
+    ? location.pathname + location.search + buildHash()
+    : location.pathname + location.search;
+  const snapshot = { screen: screen, sheet: state.sheet };
+
+  /* file:// 로 그냥 열었을 때 일부 브라우저는 pushState 에 SecurityError 를 던진다.
+     그때도 화면 전환 자체는 살아 있어야 한다 — 뒤로가기만 포기한다. */
+  try {
+    if (opts.replace) history.replaceState(snapshot, '', url);
+    else history.pushState(snapshot, '', url);
+  } catch (e) {
+    if (screen === 'report') location.hash = buildHash().slice(1);
+  }
+
+  render();
+  if (!opts.keepScroll) window.scrollTo(0, 0);
+}
+
+window.addEventListener('popstate', function (e) {
+  const s = e.state;
+  if (s && s.screen) {
+    state.screen = s.screen;
+    state.sheet = s.sheet || null;
+  } else {
+    /* 히스토리 진입점 — 해시가 있으면 리포트, 없으면 랜딩 */
+    const p = parseHash();
+    if (p) { applyParsed(p); state.screen = 'report'; } else { state.screen = 'landing'; }
+    state.sheet = null;
+  }
+  state.appNotice = false;
+  state.copyFallback = '';
+  render();
+  window.scrollTo(0, 0);
+});
+
+
+/* ==========================================================================
+   7. 화면 조각 — 목업 마크업을 그대로 옮기고 값만 상태에서 채운다
+   ========================================================================== */
+
+/* 3040 변형: 2단계(영양제 → 처방약+기본정보)로 줄었다. 기본정보(renderProfile)를
+   처방약 화면 하단에 합쳐서 화면 수 자체를 줄였기 때문 — 3040은 단계가 많으면 이탈한다. */
+function stepsBar(current) {
+  const cls = function (i) { return i < current ? 's done' : (i === current ? 's on' : 's'); };
+  return '<div class="fx-row gap-sm">' +
+    '<div class="wf-steps"><span class="' + cls(0) + '"></span><span class="' + cls(1) + '"></span></div>' +
+    '<span class="wf-steplabel">' + (current + 1) + ' / 2</span></div>';
+}
+
+function ctaBar(countHtml, act, label) {
+  return '<div class="wf-cta">' +
+    (countHtml ? '<div class="c-count">' + ico('i-check', 'fx-ico sm') + countHtml + '</div>' : '') +
+    '<button class="big-btn primary" data-act="' + act + '">' + label + '</button></div>';
+}
+
+/* ---------- A1 랜딩 ---------- */
+function renderLanding() {
+  return '<div class="screen-body gap-md">' +
+    '<div class="wf-hero">' +
+      '<span class="h-eyebrow">모두의 복약</span>' +
+      '<div class="h-title">지금 먹는 약이랑 영양제,<br>같이 먹어도 괜찮을까요?</div>' +
+      '<div class="h-sub">약과 건강기능식품을 함께 확인해 드립니다. 병원과 약국에서 따로 묻기 어려웠던 조합이요.</div>' +
+    '</div>' +
+    '<div class="wf-trust">' +
+      '<div>' + ico('i-users') + '<b>가입 없음</b><span>로그인하지 않아도 결과를 봅니다</span></div>' +
+      '<div>' + ico('i-clock') + '<b>30초</b><span>세 번만 고르면 끝나요</span></div>' +
+      '<div>' + ico('i-check-circle') + '<b>무료</b><span>결제 단계가 없습니다</span></div>' +
+    '</div>' +
+    '<div class="fx-spacer"></div>' +
+    '<button class="big-btn primary" data-act="start">내 조합 확인하기' + ico('i-chevron-right') + '</button>' +
+    '<div class="fx-cap fx-center">이 결과는 진단이 아니며, 의사·약사의 판단을 대신하지 않습니다.</div>' +
+    '<div class="fx-divider"></div>' +
+    '<div class="wf-disclaim">' + DISCLAIMER + '</div>' +
+  '</div>';
+}
+
+/* ---------- 2단계: 처방약 + 기본정보 ----------
+   3040 변형에서는 기본정보(연령대·특이사항, 원래 별도 화면이던 A4)를 이
+   화면 하단에 합쳤다. 화면 수를 줄이려는 것 — 3040은 단계가 많으면 이탈한다.
+   그래서 이 화면의 CTA 는 "다음"이 아니라 바로 "분석하기"다. */
+function renderRx() {
+  const chips = RX_LIST.map(function (o) {
+    return '<button class="chip wf' + (has(state.rx, o.id) ? ' selected' : '') + '" ' +
+           'data-act="rx-toggle" data-id="' + o.id + '" aria-pressed="' + has(state.rx, o.id) + '">' + o.name + '</button>';
+  }).join('');
+
+  const n = realRx().length;
+  const count = has(state.rx, 'none')
+    ? '처방받아 먹는 약이 없다고 했어요'
+    : '<b>' + n + '개</b> 골랐어요';
+
+  const ages = AGE_LIST.map(function (o) {
+    return '<button class="chip wf sm' + (state.age === o.id ? ' selected' : '') + '" ' +
+      'data-act="age" data-id="' + o.id + '" aria-pressed="' + (state.age === o.id) + '">' + o.name + '</button>';
+  }).join('');
+  const conds = COND_LIST.map(function (o) {
+    const on = has(state.conds, o.id);
+    return '<button class="chip wf sm' + (on ? ' selected' : '') + '" ' +
+      'data-act="cond" data-id="' + o.id + '" aria-pressed="' + on + '">' + o.name + '</button>';
+  }).join('');
+
+  return '<div class="screen-body gap-md">' +
+    stepsBar(1) +
+    '<div class="t-title">지금 처방받아<br>먹는 약이 있나요?</div>' +
+    '<div class="fx-cap16">정확한 이름을 몰라도 괜찮아요. 종류만 골라주세요.</div>' +
+    '<div class="fx-chips">' + chips + '</div>' +
+    '<div class="fx-cap">' + count + '</div>' +
+    '<div class="fx-divider"></div>' +
+    '<div class="fx-cap">이름을 정확히 알고 계시다면</div>' +
+    '<button class="row-card" data-act="to-search">' +
+      '<div class="icon-box">' + ico('i-search') + '</div>' +
+      '<div class="grow stack gap-xs"><span class="t-body bold">약 이름으로 검색</span>' +
+      '<span class="fx-cap">봉투에 적힌 이름으로 찾기</span></div>' +
+      ico('i-chevron-right', 'fx-ico t-secondary') +
+    '</button>' +
+    '<button class="row-card" data-act="to-cam">' +
+      '<div class="icon-box">' + ico('i-camera') + '</div>' +
+      '<div class="grow stack gap-xs"><span class="t-body bold">약봉투 사진으로 찾기</span>' +
+      '<span class="fx-cap">사진 한 장이면 됩니다</span></div>' +
+      ico('i-chevron-right', 'fx-ico t-secondary') +
+    '</button>' +
+    '<div class="fx-divider"></div>' +
+    '<div class="section-title first">나이대가 어떻게 되세요?</div>' +
+    '<div class="fx-chips tight">' + ages + '</div>' +
+    '<div class="section-title">해당되는 것이 있나요?</div>' +
+    '<div class="fx-chips tight">' + conds + '</div>' +
+    '<div class="fx-divider"></div>' +
+    '<div class="card fx-strip">' +
+      '<div><b>' + realRx().length + '</b><span>처방약</span></div>' +
+      '<div><b>' + state.supps.length + '</b><span>건강기능식품</span></div>' +
+      '<div><b>' + pairCount() + '</b><span>확인할 조합</span></div>' +
+    '</div>' +
+    (state.customs.length
+      ? '<div class="fx-cap">직접 입력하신 ' + state.customs.length + '개는 대조 대상에서 빠지고, 리포트에 그대로 실립니다.</div>'
+      : '') +
+  '</div>' +
+  '<div class="wf-cta"><button class="big-btn primary" data-act="analyze">' +
+    ico('i-shield-check') + '분석하기</button></div>';
+}
+
+/* ---------- B1 이름 검색 ---------- */
+function renderSearch() {
+  return '<div class="screen-header">' +
+      '<button class="sh-side" data-act="back" aria-label="뒤로">' + ico('i-chevron-left') + '</button>' +
+      '<div class="sh-title">약 이름으로 찾기</div><div class="sh-side"></div>' +
+    '</div>' +
+    '<div class="screen-body gap-md">' +
+      '<div class="row-card">' +
+        '<div class="icon-box">' + ico('i-search') + '</div>' +
+        '<div class="grow stack gap-xs">' +
+          '<input class="wf-searchinput" id="q" type="search" autocomplete="off" placeholder="약 이름 일부를 넣어 보세요" value="' + esc(state.q) + '">' +
+          '<span class="fx-cap">이름 일부만 넣어도 찾아드려요</span>' +
+        '</div>' +
+      '</div>' +
+      '<div id="search-results" class="fx-col gap-md">' + searchResults() + '</div>' +
+      '<div class="fx-divider"></div>' +
+      '<button class="big-btn ghost" data-act="back">이름을 모르겠어요 — 종류로 고르기</button>' +
+    '</div>';
+}
+function searchResults() {
+  const q = state.q.trim();
+  if (!q) return '<span class="fx-cap">봉투에 적힌 이름을 넣어주세요. 예: 아모잘</span>';
+
+  const hits = DRUG_SEARCH.filter(function (d) { return d.name.indexOf(q) !== -1; });
+  if (!hits.length) {
+    return '<div class="warn-banner info">' + ico('i-alert-circle') +
+      '<span>찾는 약이 없으면 종류로 골라주세요</span></div>' +
+      '<button class="big-btn secondary" data-act="back">종류로 고르기</button>';
+  }
+  return '<span class="fx-cap">검색 결과 ' + hits.length + '개</span>' +
+    hits.map(function (d) {
+      const i = DRUG_SEARCH.indexOf(d);
+      const on = has(state.rx, d.rx);
+      return '<button class="row-card" data-act="pick-drug" data-i="' + i + '">' +
+        '<div class="icon-box lg"><span class="fx-pill oval score"></span></div>' +
+        '<div class="grow stack gap-xs">' +
+          '<span class="t-body bold">' + d.name + '</span>' +
+          '<span class="fx-row gap-sm"><span class="tag rx">처방약</span>' +
+          '<span class="fx-cap">' + rxName(d.rx) + '으로 담깁니다</span></span>' +
+        '</div>' +
+        (on ? ico('i-check-circle', 'fx-ico t-blue') : ico('i-plus', 'fx-ico t-secondary')) +
+      '</button>';
+    }).join('');
+}
+
+/* ---------- B2 카메라 ---------- */
+function renderCam() {
+  return '<div class="screen-header">' +
+      '<button class="sh-side" data-act="back" aria-label="닫기">' + ico('i-x') + '</button>' +
+      '<div class="sh-title">약봉투 사진으로 찾기</div><div class="sh-side"></div>' +
+    '</div>' +
+    '<div class="wf-cam">' +
+      '<div class="cm-demo">데모 — 실제 인식이 아닙니다</div>' +
+      '<div class="cm-guide">약 이름이 보이도록<br>봉투를 비춰주세요</div>' +
+      '<div class="cm-hint">이 프로토타입에는 카메라도 문자 인식도 붙어 있지 않습니다. 촬영을 누르면 미리 적어 둔 예시 결과가 나옵니다.</div>' +
+    '</div>' +
+    '<div class="footer-bar">' +
+      '<button class="big-btn primary" data-act="to-ocr">' + ico('i-camera', 'fx-ico lg') + '촬영하기</button>' +
+    '</div>';
+}
+
+/* ---------- B3 인식 결과 확인 ---------- */
+function renderOcr() {
+  const rows = OCR_DEMO.map(function (o, i) {
+    const on = state.ocrPick[i];
+    return '<button class="row-card" data-act="ocr-toggle" data-i="' + i + '" aria-pressed="' + on + '">' +
+      '<div class="icon-box lg' + (o.sure ? '' : ' orange') + '"><span class="fx-pill' + (o.sure ? ' oval' : '') + ' score"></span></div>' +
+      '<div class="grow stack gap-xs">' +
+        '<span class="t-body bold">' + o.name + '</span>' +
+        '<span class="fx-row gap-sm">' +
+          '<span class="tag ' + (o.sure ? 'rx' : 'warn') + '">' + (o.sure ? '처방약' : '확인 필요') + '</span>' +
+          '<span class="fx-cap">' + o.note + ' · ' + rxName(o.rx) + '</span>' +
+        '</span>' +
+      '</div>' +
+      (on ? ico('i-check-circle', 'fx-ico t-blue') : ico('i-plus', 'fx-ico t-secondary')) +
+    '</button>';
+  }).join('');
+
+  const picked = state.ocrPick.filter(Boolean).length;
+
+  return '<div class="screen-header">' +
+      '<button class="sh-side" data-act="back" aria-label="뒤로">' + ico('i-chevron-left') + '</button>' +
+      '<div class="sh-title">이렇게 읽었어요</div><div class="sh-side"></div>' +
+    '</div>' +
+    '<div class="screen-body gap-md">' +
+      '<div class="warn-banner caution">' + ico('i-alert-triangle') +
+        '<span>데모 — 실제 인식이 아닙니다. 아래 3건은 미리 적어 둔 예시 결과입니다.</span></div>' +
+      '<div class="warn-banner info">' + ico('i-alert-circle') +
+        '<span>3개를 찾았어요. 맞는지 확인해주세요.</span></div>' +
+      rows +
+      '<span class="fx-cap">눌러서 넣고 뺄 수 있어요. 흐리게 읽힌 것은 처음부터 빼 두었습니다.</span>' +
+    '</div>' +
+    '<div class="footer-bar">' +
+      '<button class="big-btn primary" data-act="ocr-confirm">' + picked + '개 이대로 등록하기</button>' +
+    '</div>';
+}
+
+/* ---------- 1단계: 건기식 ----------
+   3040 변형에서는 영양제가 진입점이다(원래 처방약 → 건기식 순서를 뒤집었다).
+   고령층 대상 원본은 "영양제 앱으로 읽히면 안 된다"는 이유로 처방약을 먼저
+   물었지만, 3040은 반대로 자기가 먹는 영양제 스택 자체가 관심사다. */
+function renderSupp() {
+  const tiles = SUPP_LIST.map(function (o) {
+    const on = has(state.supps, o.id);
+    return '<button class="wf-tile' + (on ? ' on' : '') + '" data-act="supp-toggle" data-id="' + o.id + '" aria-pressed="' + on + '">' +
+      '<span class="t-emoji">' + o.emoji + '</span><span class="t-name">' + o.name + '</span></button>';
+  }).join('') +
+  '<button class="wf-tile" data-act="open-custom">' +
+    '<span class="t-emoji">✏️</span><span class="t-name">직접 입력' +
+    (state.customs.length ? ' ' + state.customs.length : '') + '</span></button>';
+
+  const customBlock = state.customs.length
+    ? '<div class="fx-col gap-sm">' +
+        '<div class="fx-cap">직접 적어 주신 것 — 이번 분석에서는 <b>제외</b>되고, 리포트의 「확인하지 못한 것」에 그대로 실립니다.</div>' +
+        '<div class="fx-chips tight">' + state.customs.map(function (c, i) {
+          return '<span class="chip sm">' + esc(c) +
+            '<button class="wf-x" data-act="del-custom" data-i="' + i + '" aria-label="빼기">✕</button></span>';
+        }).join('') + '</div>' +
+      '</div>'
+    : '';
+
+  return '<div class="screen-body gap-md">' +
+    stepsBar(0) +
+    '<div class="t-title">영양제나<br>건강기능식품은요?</div>' +
+    '<div class="warn-banner info">' + ico('i-alert-circle') +
+      '<span>약과 함께 먹으면 서로 영향을 주는 것들이 있습니다. 여기가 가장 중요해요.</span></div>' +
+    '<div class="wf-grid">' + tiles + '</div>' +
+    customBlock +
+  '</div>' + ctaBar('<b>' + state.supps.length + '개</b> 골랐어요', 'to-rx', '다음');
+}
+
+/* ---------- 직접 입력 시트 ---------- */
+function renderSheet() {
+  if (state.sheet !== 'custom') return '';
+  return '<div class="wf-dim" data-act="close-sheet"></div>' +
+    '<div class="wf-sheet" role="dialog" aria-label="직접 입력">' +
+      '<div class="sh-grab"></div>' +
+      '<div class="t-title">먹는 걸 적어주세요</div>' +
+      '<div class="fx-cap16">여기 적으신 것은 <b>분석 대상에서 빠집니다.</b> 저희가 모르는 성분을 아는 척하지 않으려는 것이라, ' +
+        '대신 리포트의 「무엇을 확인하지 못했나요」에 적어 주신 그대로 싣습니다.</div>' +
+      '<form data-act="add-custom">' +
+        '<input class="input" id="custom-input" type="text" maxlength="40" placeholder="예: 아르기닌, 콜라겐" autocomplete="off">' +
+        '<button class="big-btn secondary" type="submit">' + ico('i-plus') + '추가하기</button>' +
+      '</form>' +
+      (state.customs.length
+        ? '<div class="fx-chips tight">' + state.customs.map(function (c, i) {
+            return '<span class="chip sm">' + esc(c) +
+              '<button class="wf-x" data-act="del-custom" data-i="' + i + '" aria-label="빼기">✕</button></span>';
+          }).join('') + '</div>'
+        : '<span class="fx-cap">아직 적으신 것이 없습니다.</span>') +
+      '<button class="big-btn primary" data-act="close-sheet">닫기</button>' +
+    '</div>';
+}
+
+/* A4 프로필 화면은 3040 변형에 없다 — 기본정보(연령대·특이사항)는 renderRx()
+   하단에 합쳐졌다. 위 stepsBar 주석 참고. */
+
+/* ---------- A5 분석 중 ---------- */
+function renderAnalyzing() {
+  const lines = [
+    '고르신 ' + itemCount() + '개를 정리했어요',
+    '만나는 ' + pairCount() + '쌍을 대조하는 중',
+    '리포트를 만들고 있어요'
+  ];
+  const html = lines.map(function (t, i) {
+    const cls = i < state.step ? 'wf-line done' : (i === state.step ? 'wf-line now' : 'wf-line');
+    return '<div class="' + cls + '"><span class="l-dot">' +
+      (i < state.step ? ico('i-check', 'fx-ico sm') : '') + '</span><span>' + t + '</span></div>';
+  }).join('');
+
+  return '<div class="screen-body gap-lg">' +
+    '<div class="fx-spacer"></div>' +
+    '<div class="wf-scan">' + ico('i-shield-check', 'fx-ico xl') + '</div>' +
+    '<div class="t-title fx-center">조합을 확인하고 있어요</div>' +
+    '<div class="wf-lines">' + html + '</div>' +
+    '<div class="fx-spacer"></div>' +
+    '<div class="fx-cap fx-center">잠시만요. 곧 끝납니다.</div>' +
+  '</div>';
+}
+
+/* ---------- A6~A9 + C1 리포트 (한 페이지 스크롤) ---------- */
+/* ---------- 공유 카드 — 이 3040 변형의 핵심 ----------
+   9:16에 가까운 세로 카드를 renderReport() 최상단에 둔다. 스크린샷해서 인스타
+   스토리에 올리는 것이 전제라, 판정(주의 有/無)과 무관하게 항상 같은 톤으로
+   그린다 — "주의 0건"이라고 카드 색이 초록·체크로 바뀌지 않는다(§3 금지 규칙).
+   findings 중 info 등급은 뺀다 — 카드의 N 도 res.n 처럼 warn/time/check 만 센다. */
+/* 공유 카드는 남에게 보여지는 유일한 화면이다. 따라서 **약 이름·건기식 이름·특이사항을
+   절대 싣지 않는다.** 처방약 목록과 임신·수유 같은 특이사항은 개인정보보호법 §23 민감정보이고,
+   출시전략 §7의 판정도 같다 — "개인 리포트는 민감정보라 공유되지 않는다. 공유 단위는 익명 조합 카드".
+   실을 수 있는 것은 개수와 등급 분포뿐이다. */
+/* ==========================================================================
+   조합 유형 (30·40대 변형 전용)
+
+   유형은 **「무엇을 먹는가」만** 말한다. 「안전한가」는 절대 말하지 않는다.
+   그래서 판정 결과(경고 건수)와 처방약 여부는 유형 계산에 넣지 않는다 —
+   유형이 판정으로 읽히는 순간 이 제품의 P4 원칙(주의 없음 ≠ 안전)이 무너진다.
+   MBTI 가 사람을 설명하되 채점하지 않는 것과 같은 자리에 둔다.
+   ========================================================================== */
+const TYPE_CATS = [
+  { key: 'basic',  label: '기초',    ids: ['multi', 'vitd', 'mag', 'zinc', 'iron'] },
+  { key: 'vital',  label: '활력',    ids: ['omega3', 'redgin', 'protein'] },
+  { key: 'beauty', label: '미용',    ids: ['collagen', 'lutein'] },
+  { key: 'gut',    label: '장·해독', ids: ['probio', 'milk'] }
+];
+
+/* 이모지에 초록 계열을 쓰지 않는다 — 🌱·🧪 처럼 초록으로 렌더되는 이모지는
+   check.mjs 의 색 검사에 걸리지 않지만, "초록 = 문제 없음"으로 읽히는 위험은 같다. */
+const TYPES = {
+  none:    { emoji: '🕊', name: '관망 중',       line: '아직 고른 게 없어요' },
+  minimal: { emoji: '🪶', name: '미니멀 베이스', line: '꼭 필요한 것만 챙기는 편' },
+  point:   { emoji: '🎯', name: '핀포인트',      line: '목표 하나에 집중하는 편' },
+  full:    { emoji: '🧺', name: '풀케어',        line: '기초부터 두루 채우는 편' },
+  stack:   { emoji: '🧬', name: '스택 빌더',     line: '조합을 직접 설계하는 편' }
+};
+
+function typeOf() {
+  const cats = {};
+  TYPE_CATS.forEach(function (t) {
+    cats[t.key] = t.ids.filter(function (id) { return has(state.supps, id); }).length;
+  });
+  const n = state.supps.length;
+  if (!n) return { key: 'none', cats: cats, n: 0 };
+  const many  = n >= 4;
+  const basic = (cats.basic + cats.gut) * 2 >= n;   // 기초·장해독이 절반 이상이면 「기초 위주」
+  return { key: many ? (basic ? 'full' : 'stack') : (basic ? 'minimal' : 'point'), cats: cats, n: n };
+}
+
+/* 4축 레이더. 인라인 SVG 라 외부 요청이 없다. 축은 위·오른쪽·아래·왼쪽 순. */
+const RADAR_DIR = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+function radarPoint(cats, key, i, max) {
+  const v = cats[key] ? 0.3 + 0.7 * (cats[key] / max) : 0.07;
+  return [50 + RADAR_DIR[i][0] * 34 * v, 50 + RADAR_DIR[i][1] * 34 * v];
+}
+function radar(cats) {
+  const order = TYPE_CATS.map(function (t) { return t.key; });
+  const max = Math.max(1, order.reduce(function (a, k) { return Math.max(a, cats[k]); }, 0));
+  const pts = order.map(function (k, i) {
+    const p = radarPoint(cats, k, i, max);
+    return p[0].toFixed(1) + ',' + p[1].toFixed(1);
+  });
+  const ring = function (f) {
+    return '<polygon class="rd-ring" points="' + RADAR_DIR.map(function (d) {
+      return (50 + d[0] * 34 * f).toFixed(1) + ',' + (50 + d[1] * 34 * f).toFixed(1);
+    }).join(' ') + '"/>';
+  };
+  const dots = order.map(function (k, i) {
+    const p = radarPoint(cats, k, i, max);
+    return '<circle class="rd-dot' + (cats[k] ? '' : ' off') + '" cx="' + p[0].toFixed(1) +
+           '" cy="' + p[1].toFixed(1) + '" r="2.8"/>';
+  }).join('');
+
+  return '<div class="rd-wrap">' +
+    '<span class="rd-l t">기초</span><span class="rd-l r">활력</span>' +
+    '<span class="rd-l b">미용</span><span class="rd-l l">장·해독</span>' +
+    '<svg class="rd" viewBox="0 0 100 100" role="img" aria-label="영양제 구성 그래프">' +
+      ring(1) + ring(0.62) + ring(0.3) +
+      '<line class="rd-ax" x1="50" y1="16" x2="50" y2="84"/>' +
+      '<line class="rd-ax" x1="16" y1="50" x2="84" y2="50"/>' +
+      '<polygon class="rd-area" points="' + pts.join(' ') + '"/>' + dots +
+    '</svg>' +
+  '</div>';
+}
+
+/* 대조한 쌍을 점 하나씩. 등급이 나온 쌍만 색이 들어온다.
+   이름을 싣지 않으면서 "몇 쌍을 훑었는지"가 눈에 보이게 하는 것이 목적이라
+   공유 카드가 아니라 리포트 본문에 둔다(카드는 공유용, 격자는 이해용). */
+const MAX_DOTS = 72;
+function dotGrid(res, k) {
+  const seq = [];
+  ['warn', 'time', 'check'].forEach(function (lv) {
+    for (let i = 0; i < res.counts[lv]; i++) seq.push(lv);
+  });
+  let dots = '';
+  for (let i = 0; i < Math.min(k, MAX_DOTS); i++) {
+    dots += '<span class="sc-dot' + (seq[i] ? ' sc-' + seq[i] : '') + '"></span>';
+  }
+  return '<div class="card fx-col gap-sm">' +
+    '<div class="sc-grid">' + dots + '</div>' +
+    '<div class="sc-stat"><b>' + k + '</b>쌍을 하나씩 대조했어요' +
+      (k > MAX_DOTS ? ' <span class="sc-more">(그림은 ' + MAX_DOTS + '쌍까지)</span>' : '') + '</div>' +
+  '</div>';
+}
+
+function levelChips(res) {
+  const dist = [
+    { key: 'warn',  label: '주의' },
+    { key: 'time',  label: '시간 조정' },
+    { key: 'check', label: '확인 권장' }
+  ].filter(function (d) { return res.counts[d.key] > 0; });
+  return dist.length
+    ? '<div class="sc-chips">' + dist.map(function (d) {
+        return '<span class="sc-chip sc-' + d.key + '"><i></i>' + d.label + ' ' + res.counts[d.key] + '</span>';
+      }).join('') + '</div>'
+    : '<div class="sc-chips"><span class="sc-chip sc-none">확인된 주의 신호 없음</span></div>';
+}
+
+/* 유형 공개 — 분석 직후 가장 먼저 보이는 블록. */
+function typeReveal(t) {
+  const T = TYPES[t.key];
+  return '<div class="wf-reveal">' +
+    '<div class="rv-cap">내 영양제 조합 유형</div>' +
+    '<div class="rv-emoji">' + T.emoji + '</div>' +
+    '<div class="rv-name">' + T.name + '</div>' +
+    '<div class="rv-line">' + T.line + '</div>' +
+  '</div>';
+}
+
+function shareCard(res, m, k) {
+  const t = typeOf();
+  const T = TYPES[t.key];
+
+  return '<div class="wf-sharecard">' +
+    '<div class="sc-top">' +
+      '<span class="sc-badge">내 영양제 조합 유형</span>' +
+      '<div class="sc-type">' +
+        '<span class="sc-emoji">' + T.emoji + '</span>' +
+        '<span class="sc-tname">' + T.name + '</span>' +
+      '</div>' +
+      '<div class="sc-tline">' + T.line + '</div>' +
+    '</div>' +
+    '<div class="sc-mid">' + radar(t.cats) + '</div>' +
+    '<div class="sc-bot">' +
+      '<div class="sc-stat"><b>' + m + '</b>개가 만나는 <b>' + k + '</b>쌍을 대조했어요</div>' +
+      levelChips(res) +
+    '</div>' +
+    '<div class="sc-foot">' +
+      '<span class="sc-word">모두의 복약</span>' +
+      '<span class="sc-tag">가입 없이 30초</span>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderReport() {
+  const res = analyze();
+  const m = itemCount(), k = pairCount();
+  const rx = realRx();
+
+  /* 6.1 판정 블록 */
+  const verdict = res.n > 0
+    ? '<div class="wf-verdict warn"><div class="v-num">' + res.n + '</div>' +
+      '<div class="v-label">가지 확인이 필요해요</div>' +
+      '<div class="v-sub">먹는 ' + m + '개가 만나는 ' + k + '쌍을 대조한 결과입니다</div></div>'
+    : '<div class="wf-verdict clear"><div class="v-num">0</div>' +
+      '<div class="v-label">확인된 주의 신호는 없습니다</div>' +
+      '<div class="v-sub">다만 아무 문제가 없다는 뜻은 아닙니다. 아래를 꼭 읽어 주세요.</div></div>';
+
+  const strip = '<div class="card fx-strip">' +
+    '<div><b>' + res.counts.warn + '</b><span>주의</span></div>' +
+    '<div><b>' + res.counts.time + '</b><span>시간 조정</span></div>' +
+    '<div><b>' + res.counts.check + '</b><span>확인 권장</span></div></div>';
+
+  /* 확인한 것 */
+  const listOr = function (ids, f) {
+    return ids.length ? ids.map(f).join(' · ') : '고르신 것이 없습니다';
+  };
+  const checked = '<div class="card fx-col gap-sm">' +
+    '<div class="fx-row gap-sm"><span class="tag ' + (rx.length ? 'rx' : 'gray') + '">처방약 ' + rx.length + '</span>' +
+      '<span class="fx-cap">' + listOr(rx, rxName) + '</span></div>' +
+    '<div class="fx-row gap-sm"><span class="tag ' + (state.supps.length ? 'suppl' : 'gray') + '">건강기능식품 ' + state.supps.length + '</span>' +
+      '<span class="fx-cap">' + listOr(state.supps, suppName) + '</span></div>' +
+    (state.age ? '<div class="fx-row gap-sm"><span class="tag gray">' + nameOf(AGE_LIST, state.age) + '</span>' +
+      '<span class="fx-cap">' + (realConds().length ? realConds().map(condName).join(' · ') : '해당 사항 없음') + '</span></div>' : '') +
+  '</div>';
+
+  /* 6.2 / A7 상호작용 카드 */
+  const cards = res.findings.map(function (f) {
+    const L = LEVELS[f.level];
+    return '<div class="wf-find ' + L.cls + '">' +
+      '<span class="f-lv">' + ico(L.icon, 'fx-ico sm') + L.label + '</span>' +
+      '<div class="wf-pair">' + f.pair.map(function (p, i) {
+        return (i ? '<span class="p-x">×</span>' : '') + '<span class="p-item">' + p + '</span>';
+      }).join('') + '</div>' +
+      '<div class="f-what">' + f.what + '</div>' +
+      '<div class="f-do">' + ico(L.doIcon) + '<span>' + f.how + '</span></div>' +
+    '</div>';
+  }).join('');
+
+  const findingsSection = res.findings.length
+    ? '<div class="section-title wf-anchor" id="findings">무엇이 문제인가요</div>' +
+      '<div class="fx-col gap-md">' + cards + '</div>'
+    : '';
+
+  /* A8 복용 시간표 */
+  const sched = buildSchedule(res);
+  /* 3040 변형: INFO_RULES 도 level:'warn' 을 가질 수 있게 되면서(예: 임신 금기)
+     warn 이지만 f.supp 가 없는 finding 이 생겼다(rx+cond 조합이라 특정 건기식이
+     아니라서). 이 배너는 "이 건기식은 시간을 띄워도 소용없다"는 뜻이라
+     f.supp 가 있는 것만 대상으로 삼아야 한다 — 없으면 suppName(undefined) 가
+     그대로 배열에 들어가 eunNeun() 에서 죽는다. */
+  const warnSupps = res.findings.filter(function (f) { return f.level === 'warn' && f.supp; })
+    .map(function (f) { return suppName(f.supp); })
+    .filter(function (v, i, a) { return a.indexOf(v) === i; });
+
+  const timeSection = sched.length
+    ? '<div class="section-title wf-anchor" id="timetable">오늘부터 이렇게 먹어 보세요</div>' +
+      '<div class="fx-cap16">시간만 바꿔도 해결되는 것이 있습니다.</div>' +
+      '<div class="card" style="margin-top:8px">' +
+        '<div class="wf-time">' + sched.map(function (row) {
+          const plain = row.items.filter(function (it) { return !it.why; });
+          const moved = row.items.filter(function (it) { return it.why; });
+          return '<div class="tm-row">' +
+            '<div class="tm-when">' + row.slot.label + '<span>' + row.slot.time + '</span></div>' +
+            '<div class="tm-what">' +
+              (plain.length ? '<div class="n">' + plain.map(function (it) { return it.name; }).join(' · ') + '</div>' : '') +
+              moved.map(function (it) {
+                return '<div class="n">' + it.name + '</div><div class="why">' + it.why + '</div>';
+              }).join('') +
+            '</div></div>';
+        }).join('') + '</div>' +
+      '</div>' +
+      (warnSupps.length
+        ? '<div class="warn-banner caution" style="margin-top:16px">' + ico('i-alert-triangle') +
+          '<span>' + warnSupps.join(' · ') + eunNeun(warnSupps[warnSupps.length - 1]) +
+          ' 시간을 띄운다고 해소되는 항목이 아닙니다. 함께 먹는 것 자체를 진료 때 상의해주세요.</span></div>'
+        : '') +
+      '<div class="wf-disclaim" style="margin-top:16px"><b>복용 시간 제안은 일반적인 기준입니다.</b> ' +
+        '처방전에 적힌 복용법이 우선이며, 바꾸기 전에 약사에게 확인해 주세요.</div>'
+    : '';
+
+  /* 6.2 무엇을 확인하지 못했나요 — N 과 무관하게 항상 */
+  const missItem = function (html) {
+    return '<div class="fx-row top gap-sm">' + ico('i-alert-circle', 'fx-ico sm t-secondary') +
+      '<span class="t-body grow">' + html + '</span></div>';
+  };
+  const notChecked = '<div class="section-title wf-anchor" id="notchecked">무엇을 확인하지 못했나요</div>' +
+    '<div class="card fx-col gap-sm">' +
+      missItem('얼마나, 언제 먹는지 (복용량과 복용 시점)') +
+      missItem('신장·간 기능 등 몸 상태') +
+      missItem('같은 이름이라도 <b>함량이 다른 제품</b>') +
+      (state.customs.length
+        ? missItem('직접 입력하신 항목: <b>' + state.customs.map(esc).join(' · ') + '</b>')
+        : '') +
+    '</div>';
+
+  /* A9 앱 전환 */
+  const cmp = [
+    ['이번 조합 1회 분석', true],
+    ['결과 저장하고 다시 보기', false],
+    ['약이 바뀌면 자동으로 재확인', false],
+    ['복용 시간 알람', false],
+    ['약봉투 사진으로 자동 등록', false]
+  ].map(function (r) {
+    return '<div class="cp-row"><span class="cp-name">' + r[0] + '</span>' +
+      '<span class="cp-web">' + ico(r[1] ? 'i-check' : 'i-minus') + '</span>' +
+      '<span class="cp-app">' + ico('i-check') + '</span></div>';
+  }).join('');
+
+  const appSection =
+    '<div class="section-title wf-anchor" id="save">약은 계속 바뀝니다</div>' +
+    '<div class="card elevated fx-col gap-sm">' +
+      '<div class="fx-lead">오늘 결과는 <b>오늘 조합</b> 기준이에요. 약이 하나만 바뀌어도 결과가 달라집니다.</div>' +
+    '</div>' +
+    '<div class="section-title">웹에서 되는 것, 앱에서 되는 것</div>' +
+    '<div class="card"><div class="wf-compare">' +
+      '<div class="cp-row cp-head"><span class="cp-name"></span><span class="cp-web">웹</span><span class="cp-app">앱</span></div>' +
+      cmp +
+    '</div></div>' +
+    '<div style="height:8px"></div>' +
+    '<button class="big-btn primary" data-act="app-soon">' + ico('i-smartphone') + '앱에서 계속 관리하기</button>' +
+    (state.appNotice
+      ? '<div class="warn-banner info">' + ico('i-alert-circle') +
+        '<span>앱 출시 후 연결됩니다. 아직 받으실 수 있는 앱이 없어 링크를 걸어 두지 않았습니다.</span></div>'
+      : '') +
+    /* 이 링크는 본인이 결과를 다시 여는 용도다. 해시에 약 목록이 담기므로 공유용과 구분해 표시한다. */
+    '<button class="big-btn secondary" data-act="copy-link">' + ico('i-share') + '내 결과 다시 볼 링크</button>' +
+    '<div class="fx-cap fx-center">이 링크에는 고르신 약·영양제가 담겨 있습니다. 남에게 보내지 마세요.</div>' +
+    (state.copyFallback
+      ? '<div class="fx-col gap-sm"><span class="fx-cap">브라우저가 복사를 막았습니다. 아래 주소를 직접 복사해주세요.</span>' +
+        '<input class="input" readonly value="' + esc(state.copyFallback) + '" onclick="this.select()"></div>'
+      : '') +
+    '<div class="fx-cap fx-center">이 링크에는 어떤 약을 고르셨는지가 담깁니다. 보내실 곳을 확인해주세요.</div>';
+
+  return '<div class="screen-body gap-md">' +
+    /* 분석 직후 가장 먼저 보이는 것 = 유형. 결과를 「받는」 순간을 만들어 준다. */
+    typeReveal(typeOf()) +
+    '<div class="section-title first">공유할 결과 카드</div>' +
+    '<div class="fx-cap16">스크린샷으로 저장해서 스토리에 올려보세요.</div>' +
+    shareCard(res, m, k) +
+    '<button class="big-btn primary" data-act="share-card">' + ico('i-camera') + '스크린샷해서 공유하기</button>' +
+    '<button class="big-btn secondary" data-act="copy-service-link">' + ico('i-share') + '친구에게 링크 보내기</button>' +
+    '<div class="fx-cap fx-center">보내는 링크에는 고르신 약·영양제가 담기지 않습니다.</div>' +
+    '<div class="wf-sharehint">캡처한 카드는 진단이 아닙니다 — 참고용으로만 공유해주세요.</div>' +
+    '<div class="fx-divider"></div>' +
+    verdict +
+    dotGrid(res, k) +
+    strip +
+    '<div class="section-title">확인한 것</div>' +
+    checked +
+    (res.findings.length
+      ? '<button class="big-btn primary" data-act="scrollto" data-target="findings">무엇이 문제인지 보기' + ico('i-arrow-down') + '</button>'
+      : '') +
+    findingsSection +
+    (sched.length && res.findings.length
+      ? '<button class="big-btn primary" data-act="scrollto" data-target="timetable">그럼 어떻게 먹어야 하나요?' + ico('i-arrow-down') + '</button>'
+      : '') +
+    timeSection +
+    notChecked +
+    '<div class="warn-banner caution">' + ico('i-repeat') +
+      '<span>약이 바뀌면 결과도 바뀝니다. 새 약을 받으시면 다시 확인해주세요.</span></div>' +
+    '<div class="wf-disclaim">' + DISCLAIMER + '</div>' +
+    appSection +
+    '<div class="fx-divider"></div>' +
+    '<button class="big-btn ghost" data-act="restart">다른 조합으로 다시 해보기</button>' +
+    '<button class="wf-parenthook" data-act="check-parent">부모님 약도 확인해 보시겠어요?' + ico('i-chevron-right', 'fx-ico sm') + '</button>' +
+  '</div>';
+}
+
+
+/* ==========================================================================
+   8. 렌더 — 화면 하나당 함수 하나
+   ========================================================================== */
+/* 3040 변형: profile 화면이 없다 — renderRx() 에 합쳐졌다 (stepsBar 주석 참고). */
+const RENDERERS = {
+  landing: renderLanding,
+  supp: renderSupp,
+  rx: renderRx,
+  search: renderSearch,
+  cam: renderCam,
+  ocr: renderOcr,
+  analyzing: renderAnalyzing,
+  report: renderReport
+};
+
+function render() {
+  app.innerHTML = RENDERERS[state.screen]();
+  sheetRoot.innerHTML = renderSheet();
+  document.body.style.overflow = state.sheet ? 'hidden' : '';
+  if (state.sheet === 'custom') {
+    const el = document.getElementById('custom-input');
+    if (el) el.focus();
+  }
+  if (state.screen === 'search') {
+    const q = document.getElementById('q');
+    if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+  }
+}
+
+
+/* ==========================================================================
+   9. 동작
+   ========================================================================== */
+
+/* '없어요'/'해당 없음' 은 나머지와 배타 (SPEC §3) */
+function toggleExclusive(arr, id, noneId) {
+  if (id === noneId) return has(arr, noneId) ? [] : [noneId];
+  const next = arr.filter(function (x) { return x !== noneId; });
+  return has(next, id) ? next.filter(function (x) { return x !== id; }) : next.concat([id]);
+}
+
+let analyzeToken = 0;
+function startAnalyze() {
+  const token = ++analyzeToken;
+  state.step = 0;
+  go('analyzing');
+  const stepAt = function (ms, n) {
+    setTimeout(function () {
+      if (token !== analyzeToken || state.screen !== 'analyzing') return;
+      state.step = n;
+      render();
+    }, ms);
+  };
+  /* 3040 변형: 원본 2.5초는 길다. 0으로 만들면 즉시 결과라 신뢰가 떨어지므로
+     1.8초로 줄이되 같은 비율(1/3, 2/3, 3/3)로 단계를 나눴다. */
+  stepAt(600, 1);
+  stepAt(1200, 2);
+  setTimeout(function () {
+    if (token !== analyzeToken || state.screen !== 'analyzing') return;
+    /* 분석 화면은 히스토리에서 리포트로 덮어쓴다. 리포트에서 뒤로가면
+       분석이 다시 돌지 않고 곧장 이전(처방약+기본정보) 화면으로 돌아가야 하기 때문. */
+    go('report', { replace: true });
+  }, 1800);
+}
+
+/* 남에게 줄 링크는 「내 결과」가 아니라 「이 서비스」다.
+   reportUrl() 의 해시에는 r=처방약 · s=건기식 · a=연령 · c=특이사항(임신·수유 포함)이
+   그대로 인코딩돼 있어, 공개적으로 뿌리면 민감정보가 URL 로 새어 나간다.
+   본인이 결과를 다시 열기 위한 용도(copyLink)와 공유 용도(copyServiceLink)를 분리한다. */
+function copyServiceLink() {
+  const url = location.href.split('#')[0];
+  const done = function () { toast('링크를 복사했습니다'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done).catch(function () { legacyCopy(url, done, function () {}); });
+  } else {
+    legacyCopy(url, done, function () {});
+  }
+}
+
+function copyLink() {
+  const url = reportUrl();
+  const done = function () { toast('복사했습니다'); };
+  const fail = function () { state.copyFallback = url; render(); };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done).catch(function () { legacyCopy(url, done, fail); });
+  } else {
+    legacyCopy(url, done, fail);
+  }
+}
+function legacyCopy(text, done, fail) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:-1000px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    ok ? done() : fail();
+  } catch (e) { fail(); }
+}
+
+/* 3040 변형: 영양제 → 처방약 순서라 진입은 supp. restart/check-parent 가 같은
+   초기화를 쓰므로 resetState() 로 뺐다. */
+function resetState() {
+  state.rx = []; state.supps = []; state.customs = []; state.age = null;
+  state.conds = []; state.q = ''; state.ocrPick = OCR_DEMO.map(function (o) { return o.sure; });
+}
+
+const ACTIONS = {
+  start:      function () { go('supp'); },
+  back:       function () { history.back(); },
+  'to-search':function () { go('search'); },
+  'to-cam':   function () { go('cam'); },
+  'to-ocr':   function () { go('ocr'); },
+  'to-rx':    function () { go('rx'); },
+  analyze:    function () { startAnalyze(); },
+  restart:    function () { resetState(); go('landing'); },
+  'check-parent': function () {
+    resetState();
+    go('landing');
+    toast('부모님 약과 영양제로 다시 확인해 보세요');
+  },
+  'share-card': function () {
+    toast('이 카드를 캡처해 공유해주세요');
+    /* url 은 서비스 주소만 넘긴다. reportUrl() 을 넘기면 약 목록·특이사항이 링크에 실린다. */
+    if (navigator.share) {
+      navigator.share({
+        title: '모두의 복약',
+        text: '내가 먹는 약이랑 영양제 조합, 30초면 확인돼요',
+        url: location.href.split('#')[0]
+      }).catch(function () {});
+    }
+  },
+
+  'rx-toggle': function (el) {
+    state.rx = toggleExclusive(state.rx, el.dataset.id, 'none');
+    render();
+  },
+  'supp-toggle': function (el) {
+    const id = el.dataset.id;
+    state.supps = has(state.supps, id)
+      ? state.supps.filter(function (x) { return x !== id; })
+      : state.supps.concat([id]);
+    render();
+  },
+  age:  function (el) { state.age = el.dataset.id; render(); },
+  cond: function (el) { state.conds = toggleExclusive(state.conds, el.dataset.id, 'none'); render(); },
+
+  'open-custom':  function () { go('supp', { sheet: 'custom', keepScroll: true }); },
+  'close-sheet':  function () { history.back(); },
+  'del-custom':   function (el) { state.customs.splice(Number(el.dataset.i), 1); render(); },
+
+  'pick-drug': function (el) {
+    const d = DRUG_SEARCH[Number(el.dataset.i)];
+    if (!has(state.rx, d.rx)) state.rx = toggleExclusive(state.rx, d.rx, 'none');
+    toast(d.name + ' → ' + rxName(d.rx) + '으로 담았습니다');
+    render();
+  },
+  'ocr-toggle': function (el) {
+    const i = Number(el.dataset.i);
+    state.ocrPick[i] = !state.ocrPick[i];
+    render();
+  },
+  'ocr-confirm': function () {
+    OCR_DEMO.forEach(function (o, i) {
+      if (state.ocrPick[i] && !has(state.rx, o.rx)) state.rx = toggleExclusive(state.rx, o.rx, 'none');
+    });
+    const n = state.ocrPick.filter(Boolean).length;
+    go('rx');
+    toast(n + '개를 담았습니다');
+  },
+
+  scrollto: function (el) {
+    const t = document.getElementById(el.dataset.target);
+    if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  },
+  'app-soon':  function () { state.appNotice = true; render(); },
+  'copy-link': function () { copyLink(); },
+  'copy-service-link': function () { copyServiceLink(); }
+};
+
+document.addEventListener('click', function (e) {
+  const el = e.target.closest('[data-act]');
+  if (!el || el.tagName === 'FORM') return;
+  const fn = ACTIONS[el.dataset.act];
+  if (!fn) return;
+  e.preventDefault();
+  fn(el);
+});
+
+document.addEventListener('submit', function (e) {
+  const el = e.target.closest('[data-act="add-custom"]');
+  if (!el) return;
+  e.preventDefault();
+  const input = document.getElementById('custom-input');
+  const v = (input.value || '').trim();
+  if (!v) return;
+  if (state.customs.length >= 8) { toast('여덟 개까지 적으실 수 있어요'); return; }
+  state.customs.push(v);
+  render();
+});
+
+/* 검색은 결과 영역만 다시 그린다. 화면 전체를 다시 그리면 입력 포커스가 튄다. */
+document.addEventListener('input', function (e) {
+  if (e.target.id !== 'q') return;
+  state.q = e.target.value;
+  const box = document.getElementById('search-results');
+  if (box) box.innerHTML = searchResults();
+});
+
+
+/* ==========================================================================
+   10. 진입 — 해시가 있으면 랜딩을 건너뛰고 바로 리포트 (SPEC §7)
+   ========================================================================== */
+const parsed = parseHash();
+if (parsed) { applyParsed(parsed); state.screen = 'report'; }
+try { history.replaceState({ screen: state.screen, sheet: null }, '', location.href); } catch (e) { /* file:// 대비 */ }
+render();
+
+})();
+</script>
+</body>
+</html>

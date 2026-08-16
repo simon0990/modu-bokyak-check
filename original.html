@@ -1,0 +1,1619 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>내 조합 확인하기 — 모두의 복약 (검수 전 프로토타입)</title>
+<!-- 1×1 투명 PNG. 브라우저가 /favicon.ico 를 자동으로 요청하는 것까지 막아 요청 0건을 지킨다.
+     (data:, 처럼 빈 URI 를 주면 크롬이 무효로 보고 /favicon.ico 를 그대로 때린다) -->
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==">
+<style>
+/* ==========================================================================
+   tokens.css 사본 — care-app/src/theme/tokens.ts 와 같은 값. 바꾸지 말 것.
+   원본의 Google Fonts @import 는 뺐다. 외부 요청 0건이 이 프로토타입의 제약이다.
+   ========================================================================== */
+:root {
+  --primary-navy:      #102A5E;
+  --primary-blue:      #2563EB;
+  --secondary-blue:    #4F8EF7;
+  --light-blue-bg:     #EEF5FF;
+  --card-bg:           #FFFFFF;
+  --border:            #D8E5F6;
+  --text:              #1F2937;
+  --text-secondary:    #64748B;
+  --success-green:     #36B37E;
+  --warning-orange:    #F5A623;
+  --danger-red:        #E25353;
+  --condition-purple:  #8B5CF6;
+
+  --screen-bg:         #F7FAFF;
+  --green-bg:          #E6F9F1;
+  --orange-bg:         #FFF8ED;
+  --red-bg:            #FFF0F0;
+  --purple-bg:         #F3EEFF;
+
+  --fs-body:      18px;
+  --fs-emphasis:  22px;
+  --fs-title:     24px;
+  --fs-hero:      40px;
+
+  --sp-xs:  4px;
+  --sp-sm:  8px;
+  --sp-md: 16px;
+  --sp-lg: 24px;
+  --sp-xl: 32px;
+
+  --r-card:   16px;
+  --r-button: 14px;
+  --r-pill:   999px;
+
+  --min-touch: 56px;
+
+  --demo-strip-h: 38px;
+}
+
+* { box-sizing: border-box; }
+
+/* ==========================================================================
+   페이지 셸 — 목업의 폰 프레임(.phone / .statusbar / .wf-urlbar / .wf-fold)을
+   전부 걷어냈다. 여기서는 브라우저가 그 역할을 한다.
+   ========================================================================== */
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: #E9EFF9;
+  font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  color: var(--text);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* SPEC §1 — 검수가 끝나기 전에는 절대 제거하지 않는다. */
+.demo-strip {
+  position: sticky; top: 0; z-index: 200;
+  min-height: var(--demo-strip-h);
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px;
+  background: #7C2D12; color: #FFE8D6;
+  font-size: 13px; font-weight: 700; line-height: 1.4;
+  padding: 7px 14px; text-align: center;
+}
+.demo-strip svg { width: 15px; height: 15px; flex: none; color: #FDBA74; }
+
+.app {
+  max-width: 430px;
+  margin: 0 auto;
+  background: var(--screen-bg);
+  min-height: calc(100vh - var(--demo-strip-h));
+  display: flex;
+  flex-direction: column;
+}
+@media (min-width: 486px) {
+  .app { border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+}
+
+.screen-body {
+  flex: 1;
+  padding: var(--sp-lg);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.screen-body.no-pad { padding: 0; }
+
+/* ScreenHeader.tsx */
+.screen-header {
+  flex: none;
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--card-bg);
+  padding: 8px 12px 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: var(--demo-strip-h); z-index: 30;
+}
+.screen-header .sh-side { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+.screen-header .sh-title {
+  flex: 1; text-align: center;
+  font-size: var(--fs-title); font-weight: 700; color: var(--primary-navy);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   컴포넌트 — care-app/src/components/*.tsx 대응 (tokens.css 사본)
+   ========================================================================== */
+.big-btn {
+  min-height: var(--min-touch);
+  border-radius: var(--r-button);
+  display: flex; align-items: center; justify-content: center; gap: var(--sp-sm);
+  padding: 14px 16px;
+  margin: 6px 0;
+  font-size: var(--fs-emphasis); font-weight: 700; font-family: inherit;
+  border: none; cursor: pointer; flex: none;
+  width: 100%;
+  text-align: center;
+}
+.big-btn.primary   { background: var(--primary-blue); color: #fff; box-shadow: 0 6px 14px rgba(37, 99, 235, 0.30); }
+.big-btn.secondary { background: var(--card-bg); color: var(--primary-blue); border: 1px solid var(--border); box-shadow: 0 2px 6px rgba(16, 42, 94, 0.06); }
+.big-btn.ghost     { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); box-shadow: none; }
+.big-btn:disabled  { opacity: .45; cursor: default; }
+
+.card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--r-card); padding: var(--sp-md); flex: none; }
+.card.elevated { box-shadow: 0 2px 8px rgba(16, 42, 94, 0.05); }
+
+.row-card {
+  display: flex; align-items: center; gap: var(--sp-md);
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--r-card);
+  padding: var(--sp-md); flex: none;
+  width: 100%; text-align: left; font-family: inherit; color: inherit;
+}
+button.row-card { cursor: pointer; }
+
+.icon-box {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--light-blue-bg);
+  display: flex; align-items: center; justify-content: center;
+  flex: none; color: var(--primary-blue);
+}
+.icon-box.lg     { width: 56px; height: 56px; border-radius: var(--r-card); }
+.icon-box.orange { background: var(--orange-bg); color: var(--warning-orange); }
+.icon-box.purple { background: var(--purple-bg);  color: var(--condition-purple); }
+
+.tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: var(--r-pill);
+  font-size: 14px; font-weight: 700; flex: none;
+}
+.tag.rx    { background: var(--light-blue-bg); color: var(--primary-blue); }
+.tag.suppl { background: var(--purple-bg);     color: var(--condition-purple); }
+.tag.warn  { background: var(--orange-bg);     color: var(--warning-orange); }
+.tag.gray  { background: #F1F5F9;              color: var(--text-secondary); }
+
+.chip {
+  min-height: 52px; min-width: 72px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: var(--card-bg); color: var(--text);
+  font-size: 18px; font-weight: 700; font-family: inherit;
+  padding: 0 18px; margin: 6px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+}
+.chip.selected { background: var(--primary-blue); border-color: var(--primary-blue); color: #fff; }
+.chip.sm { min-height: 40px; min-width: 0; font-size: 16px; padding: 0 14px; margin: 0; }
+
+.footer-bar { flex: none; padding: var(--sp-lg); background: var(--card-bg); border-top: 1px solid var(--border); }
+
+.section-title {
+  font-size: var(--fs-emphasis); font-weight: 700; color: var(--text);
+  margin: var(--sp-lg) 0 var(--sp-sm); flex: none;
+  scroll-margin-top: 52px;
+}
+.section-title.first { margin-top: 0; }
+
+.input {
+  background: var(--light-blue-bg); border: 1px solid var(--border); border-radius: var(--r-button);
+  font-size: var(--fs-body); font-family: inherit; color: var(--text);
+  padding: 14px; width: 100%;
+}
+.input::placeholder { color: var(--text-secondary); }
+
+.warn-banner {
+  display: flex; gap: var(--sp-sm); align-items: flex-start;
+  background: var(--red-bg); border: 1px solid var(--danger-red); border-radius: var(--r-card);
+  padding: var(--sp-md); color: var(--danger-red);
+  font-size: 16px; font-weight: 700; line-height: 1.45; flex: none;
+}
+.warn-banner.info    { background: var(--light-blue-bg); border-color: var(--border); color: var(--primary-navy); }
+.warn-banner.caution { background: var(--orange-bg); border-color: var(--warning-orange); color: #A16207; }
+
+.t-body      { font-size: var(--fs-body); }
+.t-emph      { font-size: var(--fs-emphasis); font-weight: 700; }
+.t-title     { font-size: var(--fs-title); font-weight: 700; color: var(--primary-navy); }
+.t-secondary { color: var(--text-secondary); }
+.t-blue      { color: var(--primary-blue); }
+.bold        { font-weight: 700; }
+.stack       { display: flex; flex-direction: column; }
+.grow        { flex: 1; min-width: 0; }
+.gap-xs { gap: var(--sp-xs); } .gap-sm { gap: var(--sp-sm); }
+.gap-md { gap: var(--sp-md); } .gap-lg { gap: var(--sp-lg); }
+
+/* ==========================================================================
+   web.css 사본 — 이 기능 전용 컴포넌트. 목업의 클래스·하위 구조를 그대로 승계.
+   (뷰어 전용이던 .wf-fold / .wf-urlbar / .hub-hero / .callout 등은 뺐다)
+   ========================================================================== */
+.fx-ico    { width: 24px; height: 24px; flex: none; }
+.fx-ico.sm { width: 20px; height: 20px; }
+.fx-ico.lg { width: 28px; height: 28px; }
+.fx-ico.xl { width: 40px; height: 40px; }
+
+.fx-col   { display: flex; flex-direction: column; flex: none; min-width: 0; }
+.fx-row   { display: flex; align-items: center; flex: none; min-width: 0; flex-wrap: wrap; row-gap: var(--sp-xs); }
+.fx-row.top { align-items: flex-start; flex-wrap: nowrap; }
+.fx-center{ text-align: center; }
+.fx-cap   { font-size: 14px; line-height: 1.55; color: var(--text-secondary); }
+.fx-cap16 { font-size: 16px; line-height: 1.6; color: var(--text-secondary); }
+.fx-link  { font-size: 16px; font-weight: 700; color: var(--primary-blue); flex: none; }
+.fx-divider { height: 1px; background: var(--border); flex: none; margin: var(--sp-md) 0; }
+.fx-lead  { font-size: var(--fs-body); line-height: 1.65; }
+.fx-spacer { flex: 1; min-height: var(--sp-md); }
+
+.fx-pill {
+  position: relative; flex: none;
+  width: 30px; height: 30px; border-radius: var(--r-pill);
+  background: #fff; border: 2px solid var(--border);
+}
+.fx-pill.oval { width: 38px; height: 24px; }
+.fx-pill.score::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 58%; height: 2px; background: var(--border);
+}
+
+.fx-strip { display: flex; align-items: stretch; flex: none; }
+.fx-strip > div { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.fx-strip > div + div { border-left: 1px solid var(--border); }
+.fx-strip b { font-size: var(--fs-emphasis); color: var(--primary-navy); }
+.fx-strip span { font-size: 14px; color: var(--text-secondary); font-weight: 700; }
+
+.fx-chips { display: flex; flex-wrap: wrap; margin: 0 -6px; flex: none; }
+.fx-chips.tight { margin: 0; gap: 8px; }
+.chip.wf { min-height: 48px; font-size: 17px; padding: 0 16px; margin: 5px; }
+
+/* ---------- 랜딩 히어로 ---------- */
+.wf-hero {
+  flex: none;
+  background: linear-gradient(150deg, var(--primary-navy), var(--primary-blue));
+  border-radius: var(--r-card);
+  padding: var(--sp-lg);
+  color: #fff;
+  display: flex; flex-direction: column; gap: var(--sp-md);
+}
+.wf-hero .h-eyebrow { font-size: 14px; font-weight: 700; letter-spacing: .4px; color: #A9C6FF; }
+.wf-hero .h-title   { font-size: 30px; font-weight: 800; line-height: 1.35; letter-spacing: -0.5px; }
+.wf-hero .h-sub     { font-size: 16px; line-height: 1.7; color: #DCE8FF; }
+
+.wf-trust { display: flex; gap: var(--sp-sm); flex: none; }
+.wf-trust > div {
+  flex: 1;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--r-button);
+  padding: 12px 6px;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  text-align: center;
+}
+.wf-trust b    { font-size: 15px; font-weight: 800; color: var(--primary-navy); }
+.wf-trust span { font-size: 12px; color: var(--text-secondary); font-weight: 600; line-height: 1.4; }
+
+/* ---------- 상단 진행 표시 ---------- */
+.wf-steps { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.wf-steps .s { height: 6px; flex: 1 1 0; min-width: 20px; border-radius: var(--r-pill); background: var(--border); }
+.wf-steps .s.on   { background: var(--primary-blue); }
+.wf-steps .s.done { background: var(--secondary-blue); }
+.wf-steplabel { font-size: 14px; font-weight: 700; color: var(--text-secondary); flex: none; }
+
+/* ---------- 건기식 선택 그리드 ---------- */
+.wf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; flex: none; }
+.wf-tile {
+  background: var(--card-bg); border: 2px solid var(--border); border-radius: var(--r-card);
+  padding: 14px 6px 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  text-align: center; position: relative;
+  min-height: 96px; justify-content: center;
+  font-family: inherit; cursor: pointer;
+}
+.wf-tile .t-name  { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.35; }
+.wf-tile .t-emoji { font-size: 26px; line-height: 1; }
+.wf-tile.on { border-color: var(--primary-blue); background: var(--light-blue-bg); }
+.wf-tile.on .t-name { color: var(--primary-blue); }
+.wf-tile.on::after {
+  content: "✓";
+  position: absolute; top: -8px; right: -8px;
+  width: 26px; height: 26px; border-radius: var(--r-pill);
+  background: var(--primary-blue); color: #fff;
+  font-size: 15px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 6px rgba(37,99,235,.35);
+}
+
+/* ---------- 하단 CTA 바 — 목업에선 폰 안 고정, 여기선 화면 하단에 붙는 sticky ---------- */
+.wf-cta {
+  flex: none; background: var(--card-bg); border-top: 1px solid var(--border);
+  padding: 12px var(--sp-lg) var(--sp-md);
+  position: sticky; bottom: 0; z-index: 40;
+  box-shadow: 0 -6px 20px rgba(16, 42, 94, .07);
+}
+.wf-cta .c-count {
+  font-size: 15px; font-weight: 700; color: var(--text-secondary);
+  margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+}
+.wf-cta .c-count b { color: var(--primary-blue); }
+.wf-cta .big-btn { margin: 0; }
+
+/* ---------- 분석 중 ---------- */
+.wf-scan {
+  width: 132px; height: 132px; border-radius: var(--r-pill);
+  background: var(--light-blue-bg); border: 3px solid var(--secondary-blue);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--primary-blue);
+  margin: 0 auto; flex: none; position: relative;
+}
+.wf-scan::after { content: ""; position: absolute; inset: -14px; border-radius: var(--r-pill); border: 2px solid var(--border); }
+.wf-lines { display: flex; flex-direction: column; gap: 10px; flex: none; }
+.wf-line {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 16px; line-height: 1.5; color: var(--text-secondary); font-weight: 600;
+}
+.wf-line.done { color: var(--text); }
+.wf-line.now  { color: var(--primary-blue); font-weight: 700; }
+.wf-line .l-dot {
+  width: 22px; height: 22px; border-radius: var(--r-pill); flex: none;
+  border: 2px solid var(--border); background: var(--card-bg);
+  display: flex; align-items: center; justify-content: center;
+}
+.wf-line.done .l-dot { background: var(--secondary-blue); border-color: var(--secondary-blue); color: #fff; }
+.wf-line.now  .l-dot { border-color: var(--primary-blue); border-width: 3px; }
+
+/* ---------- 리포트 최상단 판정 ---------- */
+.wf-verdict {
+  flex: none; border-radius: var(--r-card); padding: var(--sp-lg) var(--sp-md);
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-sm);
+  text-align: center;
+}
+.wf-verdict .v-num   { font-size: var(--fs-hero); font-weight: 800; line-height: 1.1; }
+.wf-verdict .v-label { font-size: var(--fs-emphasis); font-weight: 800; }
+.wf-verdict .v-sub   { font-size: 15px; line-height: 1.6; }
+.wf-verdict.warn { background: var(--orange-bg); border: 2px solid var(--warning-orange); }
+.wf-verdict.warn .v-num, .wf-verdict.warn .v-label { color: #A16207; }
+.wf-verdict.warn .v-sub { color: #92610A; }
+/* 주의 없음 — 초록을 쓰지 않는다. "안전" 오인 방지 (README §4.3) */
+.wf-verdict.clear { background: var(--light-blue-bg); border: 2px solid var(--border); }
+.wf-verdict.clear .v-num, .wf-verdict.clear .v-label { color: var(--primary-navy); }
+.wf-verdict.clear .v-sub { color: var(--text-secondary); }
+
+/* ---------- 상호작용 카드 ---------- */
+.wf-find {
+  flex: none; background: var(--card-bg);
+  border: 1px solid var(--border); border-left: 5px solid var(--border);
+  border-radius: 0 var(--r-card) var(--r-card) 0;
+  padding: var(--sp-md);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.wf-find.lv1 { border-left-color: var(--danger-red); }
+.wf-find.lv2 { border-left-color: var(--warning-orange); }
+.wf-find.lv3 { border-left-color: var(--primary-blue); }
+.wf-find.lv4 { border-left-color: #CBD5E1; }
+.wf-find .f-lv {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px; border-radius: var(--r-pill);
+  font-size: 14px; font-weight: 800; align-self: flex-start; flex: none;
+}
+.wf-find.lv1 .f-lv { background: var(--red-bg);        color: var(--danger-red); }
+.wf-find.lv2 .f-lv { background: var(--orange-bg);     color: #A16207; }
+.wf-find.lv3 .f-lv { background: var(--light-blue-bg); color: var(--primary-blue); }
+.wf-find.lv4 .f-lv { background: #F1F5F9;              color: var(--text-secondary); }
+
+.wf-pair { display: flex; align-items: center; gap: 8px; flex: none; flex-wrap: wrap; row-gap: 6px; }
+.wf-pair .p-item {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--screen-bg); border: 1px solid var(--border);
+  border-radius: var(--r-button); padding: 7px 11px;
+  font-size: 16px; font-weight: 700; color: var(--text);
+}
+.wf-pair .p-x { font-size: 18px; font-weight: 800; color: var(--text-secondary); flex: none; }
+
+.wf-find .f-what   { font-size: 17px; line-height: 1.6; color: var(--text); }
+.wf-find .f-what b { color: var(--primary-navy); }
+.wf-find .f-do {
+  display: flex; gap: 8px; align-items: flex-start;
+  background: var(--screen-bg); border-radius: var(--r-button);
+  padding: 11px 13px;
+  font-size: 16px; line-height: 1.6; font-weight: 700; color: var(--primary-navy);
+}
+.wf-find .f-do svg { width: 20px; height: 20px; flex: none; margin-top: 2px; color: var(--primary-blue); }
+
+/* ---------- 복용 시간표 ---------- */
+.wf-time { display: flex; flex-direction: column; flex: none; }
+.wf-time .tm-row { display: flex; gap: var(--sp-md); align-items: flex-start; padding: 13px 0; }
+.wf-time .tm-row + .tm-row { border-top: 1px solid var(--border); }
+.wf-time .tm-when {
+  width: 78px; flex: none;
+  font-size: 16px; font-weight: 800; color: var(--primary-navy);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.wf-time .tm-when span { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+.wf-time .tm-what { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.wf-time .tm-what .n   { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.5; }
+.wf-time .tm-what .why { font-size: 14px; line-height: 1.5; color: var(--warning-orange); font-weight: 700; }
+
+/* ---------- 하단 고지 (모든 리포트 필수) ---------- */
+.wf-disclaim {
+  flex: none;
+  background: #F1F5F9; border-radius: var(--r-button);
+  padding: 13px 15px;
+  font-size: 13px; line-height: 1.65; color: var(--text-secondary);
+}
+.wf-disclaim b { color: #475569; }
+
+/* ---------- 웹 vs 앱 비교 ---------- */
+.wf-compare { display: flex; flex-direction: column; flex: none; }
+.wf-compare .cp-row { display: flex; align-items: center; gap: var(--sp-sm); padding: 11px 0; font-size: 16px; line-height: 1.5; }
+.wf-compare .cp-row + .cp-row { border-top: 1px solid var(--border); }
+.wf-compare .cp-name { flex: 1; min-width: 0; font-weight: 700; color: var(--text); }
+.wf-compare .cp-web, .wf-compare .cp-app { width: 46px; flex: none; display: flex; align-items: center; justify-content: center; }
+.wf-compare .cp-web svg { width: 20px; height: 20px; color: #CBD5E1; }
+/* 초록 금지 — 「앱에서 됩니다」라는 기능 표시일 뿐이지만, 주의 0건 리포트와 같은
+   페이지에 초록 체크가 줄지어 있으면 「다 괜찮다」는 인상을 준다.
+   이 제품은 리포트 어디에도 초록을 쓰지 않는다. */
+.wf-compare .cp-app svg { width: 22px; height: 22px; color: var(--primary-blue); }
+.wf-compare .cp-head { font-size: 13px; font-weight: 800; color: var(--text-secondary); padding-bottom: 8px; }
+.wf-compare .cp-head .cp-app { color: var(--primary-blue); }
+
+/* ---------- 바텀시트 ---------- */
+.wf-dim { position: fixed; inset: 0; background: rgba(16, 42, 94, .34); z-index: 300; border: none; padding: 0; }
+.wf-sheet {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: 0;
+  width: 100%; max-width: 430px; z-index: 310;
+  background: var(--card-bg);
+  border-radius: 22px 22px 0 0;
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -8px 28px rgba(16, 42, 94, .16);
+  padding: var(--sp-md) var(--sp-lg) var(--sp-lg);
+  display: flex; flex-direction: column; gap: var(--sp-md);
+  max-height: 86vh; overflow-y: auto;
+}
+.wf-sheet .sh-grab { width: 44px; height: 5px; border-radius: var(--r-pill); background: var(--border); margin: 0 auto 2px; flex: none; }
+
+/* ---------- 카메라 뷰 ---------- */
+.wf-cam { flex: 1; background: #232B3A; position: relative; display: flex; align-items: center; justify-content: center; min-height: 340px; }
+.wf-cam .cm-guide {
+  width: 74%; height: 46%;
+  border: 3px dashed rgba(255,255,255,.72); border-radius: var(--r-card);
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,.86);
+  font-size: 16px; font-weight: 700; text-align: center; line-height: 1.6;
+  padding: var(--sp-md);
+}
+.wf-cam .cm-hint {
+  position: absolute; left: var(--sp-md); right: var(--sp-md); bottom: var(--sp-md);
+  background: rgba(0,0,0,.55); color: #fff;
+  border-radius: var(--r-button); padding: 11px 14px;
+  font-size: 14px; line-height: 1.55; text-align: center; font-weight: 600;
+}
+.wf-cam .cm-demo {
+  position: absolute; left: var(--sp-md); right: var(--sp-md); top: var(--sp-md);
+  background: #7C2D12; color: #FFE8D6;
+  border-radius: var(--r-button); padding: 9px 12px;
+  font-size: 13px; font-weight: 800; text-align: center;
+}
+
+/* ==========================================================================
+   프로토타입 전용 (목업에 없던 것 — 전부 wf- 접두사)
+   ========================================================================== */
+.wf-searchinput {
+  border: none; background: transparent; outline: none;
+  font-family: inherit; font-size: var(--fs-body); font-weight: 700; color: var(--text);
+  width: 100%; padding: 0;
+}
+.wf-searchinput::placeholder { font-weight: 400; color: var(--text-secondary); }
+
+.wf-toast {
+  position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%);
+  z-index: 400;
+  background: rgba(16, 42, 94, .94); color: #fff;
+  border-radius: var(--r-pill); padding: 12px 20px;
+  font-size: 15px; font-weight: 700; line-height: 1.5;
+  max-width: 92vw; text-align: center;
+  box-shadow: 0 8px 24px rgba(16, 42, 94, .3);
+}
+.wf-toast[hidden] { display: none; }
+
+.wf-anchor { scroll-margin-top: 52px; }
+.wf-x { background: none; border: none; font-family: inherit; cursor: pointer; padding: 0 0 0 6px; color: var(--text-secondary); font-size: 16px; font-weight: 800; }
+</style>
+</head>
+<body>
+
+<!-- 아이콘 스프라이트 — mockup/_scaffold.html 사본. 인라인이라 외부 요청이 없다. -->
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></symbol>
+  <symbol id="i-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.29 3.86-8.18 14a2 2 0 0 0 1.71 3h16.36a2 2 0 0 0 1.71-3l-8.18-14a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-alert-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.8 10A10 10 0 1 1 17 3.34"/><path d="m9 11 3 3L22 4"/></symbol>
+  <symbol id="i-shield-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M15 2v5h5"/><path d="M9 13h6"/><path d="M9 17h6"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
+  <symbol id="i-smartphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18.5h2"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6 12 3l3 3"/><path d="M12 3v13"/><path d="M6 12H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-1"/></symbol>
+  <symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16"/><path d="m18 14-6 6-6-6"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h12"/></symbol>
+</svg>
+
+<!-- SPEC §1 — 항상 보이는 데모 표식. 약사 검수 전에는 제거하지 않는다. -->
+<div class="demo-strip" role="note">
+  <svg aria-hidden="true"><use href="#i-alert-triangle"/></svg>
+  프로토타입 — 검수 전 데모입니다. 실제 복약 판단에 쓰지 마세요.
+</div>
+
+<main class="app" id="app"></main>
+<div id="sheet-root"></div>
+<div id="toast" class="wf-toast" hidden></div>
+
+<script>
+"use strict";
+(function () {
+
+/* ==========================================================================
+   1. 입력 카탈로그 (SPEC §3)
+   ========================================================================== */
+const RX_LIST = [
+  { id: 'bp',   name: '혈압약' },
+  { id: 'dm',   name: '당뇨약' },
+  { id: 'chol', name: '고지혈증약' },
+  { id: 'thy',  name: '갑상선약' },
+  { id: 'gi',   name: '위장약' },
+  { id: 'anti', name: '아스피린·항혈전제' },
+  { id: 'psy',  name: '항우울제·수면제' },
+  { id: 'pain', name: '통증·소염제' },
+  { id: 'bone', name: '골다공증약' },
+  { id: 'none', name: '없어요' }
+];
+
+const SUPP_LIST = [
+  { id: 'omega3', name: '오메가3',       emoji: '🐟' },
+  { id: 'multi',  name: '종합비타민',     emoji: '💊' },
+  { id: 'vitd',   name: '비타민D',        emoji: '☀️' },
+  { id: 'probio', name: '유산균',         emoji: '🦠' },
+  { id: 'calmag', name: '칼슘·마그네슘',  emoji: '🦴' },
+  { id: 'milk',   name: '밀크씨슬',       emoji: '🌿' },
+  { id: 'lutein', name: '루테인',         emoji: '👁️' },
+  { id: 'redgin', name: '홍삼',           emoji: '🫚' },
+  { id: 'iron',   name: '철분',           emoji: '🩸' },
+  { id: 'zinc',   name: '아연',           emoji: '⚡' },
+  { id: 'ginkgo', name: '은행잎',         emoji: '🍂' }
+];
+
+const AGE_LIST = [
+  { id: '30', name: '30대 이하' },
+  { id: '40', name: '40대' },
+  { id: '50', name: '50대' },
+  { id: '60', name: '60대' },
+  { id: '70', name: '70대 이상' }
+];
+
+const COND_LIST = [
+  { id: 'preg',   name: '임신·수유 중' },
+  { id: 'kidney', name: '신장 질환' },
+  { id: 'liver',  name: '간 질환' },
+  { id: 'none',   name: '해당 없음' }
+];
+
+/* 복용 시간대 (SPEC §5) */
+const SLOTS = [
+  { id: 'morningEmpty', label: '아침 공복', time: '오전 7:00' },
+  { id: 'morning',      label: '아침 식후', time: '오전 8:00' },
+  { id: 'lunch',        label: '점심 식후', time: '오후 12:30' },
+  { id: 'evening',      label: '저녁 식후', time: '오후 7:00' },
+  { id: 'night',        label: '자기 전',   time: '오후 10:00' }
+];
+
+/* ==========================================================================
+   ⚠ 검수 전 예시 데이터 — 약사 검수 후 교체할 것
+   --------------------------------------------------------------------------
+   상호작용 판정에 쓰이는 지식은 전부 이 블록 안에만 있다. 화면 코드에는
+   조합에 대한 if 문이 하나도 없다. 검수 뒤에는 아래 5개 상수만 통째로 갈아
+   끼우면 되고, 렌더링·시간표·집계 코드는 손대지 않는다.
+
+   등급: warn(주의·빨강) / time(시간 조정·주황) / check(확인 권장·파랑) / info(알아두기·회색)
+   time 규칙은 suppSlot(건기식을 옮길 시간대)과 why(시간표에 붙일 주황 한 줄)를 함께 갖는다.
+   ========================================================================== */
+
+/* SPEC §5 기본 배치 */
+const DEFAULT_SLOT = {
+  thy: 'morningEmpty', bone: 'morningEmpty', probio: 'morningEmpty',
+  bp: 'morning', dm: 'morning', anti: 'morning', gi: 'morning', pain: 'morning',
+  redgin: 'morning', zinc: 'morning', ginkgo: 'morning',
+  chol: 'evening', psy: 'night',
+  omega3: 'evening', multi: 'evening', vitd: 'evening', lutein: 'evening', milk: 'evening',
+  calmag: 'lunch', iron: 'lunch'
+};
+
+/* SPEC §4.1~4.3 — 처방약 × 건기식 */
+const RULES = [
+  /* 4.1 주의 (warn) — 근거 확립 */
+  { rx: 'anti', supp: 'omega3', level: 'warn',
+    what: '둘 다 <b>혈액이 굳는 것을 늦추는</b> 방향으로 작용합니다. 함께 드시면 멍이 잘 들거나, 코피·잇몸 출혈이 늘어날 수 있어요.',
+    how:  '<b>스스로 끊지 마세요.</b> 다음 진료 때 오메가3를 함께 먹고 있다고 꼭 말씀해 주세요.' },
+  { rx: 'anti', supp: 'ginkgo', level: 'warn',
+    what: '은행잎도 <b>피를 묽게 하는</b> 방향으로 작용합니다. 항혈전제와 겹치면 출혈 위험이 커질 수 있어요.',
+    how:  '<b>스스로 끊지 마세요.</b> 다음 진료 때 은행잎 제품을 함께 먹고 있다고 말씀해 주세요.' },
+
+  /* 4.2 시간 조정 (time) */
+  { rx: 'thy', supp: 'calmag', level: 'time', suppSlot: 'lunch', why: '갑상선약과 4시간 이상 띄우기',
+    what: '칼슘이 갑상선약의 <b>흡수를 방해</b>합니다. 같은 시간에 드시면 약효가 떨어질 수 있어요.',
+    how:  '<b>시간만 띄우면 해결됩니다.</b> 갑상선약은 아침 공복에, 칼슘은 최소 4시간 뒤에 드세요.' },
+  { rx: 'thy', supp: 'iron', level: 'time', suppSlot: 'lunch', why: '갑상선약과 4시간 이상 띄우기',
+    what: '철분이 갑상선약의 <b>흡수를 방해</b>합니다.',
+    how:  '<b>시간만 띄우면 해결됩니다.</b> 갑상선약을 드시고 최소 4시간 뒤에 철분을 드세요.' },
+  { rx: 'thy', supp: 'multi', level: 'time', suppSlot: 'lunch', why: '갑상선약과 4시간 이상 띄우기',
+    what: '종합비타민에 든 칼슘·철분이 갑상선약의 <b>흡수를 방해</b>할 수 있습니다.',
+    how:  '<b>시간만 띄우면 해결됩니다.</b> 갑상선약과 최소 4시간 간격을 두세요.' },
+  { rx: 'bone', supp: 'calmag', level: 'time', suppSlot: 'lunch', why: '골다공증약보다 나중에 — 점심 이후로',
+    what: '칼슘이 골다공증약의 <b>흡수를 크게 떨어뜨립니다.</b>',
+    how:  '<b>시간만 띄우면 해결됩니다.</b> 골다공증약은 아침 공복에 드시고, 칼슘은 점심 이후로 옮기세요.' },
+  { rx: 'gi', supp: 'iron', level: 'time', suppSlot: 'lunch', why: '위장약과 2시간 이상 띄우기',
+    what: '위산을 줄이는 약은 철분 <b>흡수를 떨어뜨립니다.</b>',
+    how:  '위장약과 2시간 이상 간격을 두고 철분을 드세요.' },
+  { rx: 'gi', supp: 'calmag', level: 'time', suppSlot: 'lunch', why: '위장약과 2시간 이상 띄우기',
+    what: '제산 성분과 칼슘·마그네슘이 서로 <b>흡수를 방해</b>할 수 있습니다.',
+    how:  '위장약과 2시간 이상 간격을 두세요.' },
+
+  /* 4.3 확인 권장 (check) — 근거가 제한적인 것 */
+  { rx: 'chol', supp: 'milk', level: 'check',
+    what: '둘 다 간에서 <b>같은 경로로 분해</b>됩니다. 관련 보고가 있지만 근거는 아직 제한적이에요.',
+    how:  '다음 진료나 약국에 가실 때 한 번 여쭤보시면 좋습니다.' },
+  { rx: 'anti', supp: 'redgin', level: 'check',
+    what: '홍삼이 혈액 응고에 영향을 준다는 보고가 있습니다. 근거는 엇갈립니다.',
+    how:  '다음 진료 때 홍삼을 먹고 있다고 알려 주세요.' },
+  { rx: 'anti', supp: 'multi', level: 'check',
+    what: '종합비타민의 비타민E가 많으면 <b>출혈 경향</b>을 더할 수 있습니다.',
+    how:  '제품의 비타민E 함량을 약사에게 한 번 보여 주세요.' },
+  { rx: 'dm', supp: 'redgin', level: 'check',
+    what: '홍삼이 <b>혈당에 영향</b>을 준다는 보고가 있습니다.',
+    how:  '혈당을 평소보다 자주 재 보시고, 변화가 있으면 알리세요.' },
+  { rx: 'bp', supp: 'redgin', level: 'check',
+    what: '홍삼이 <b>혈압에 영향</b>을 준다는 보고가 있습니다.',
+    how:  '혈압을 평소보다 자주 재 보시고, 변화가 있으면 알리세요.' },
+  { rx: 'psy', supp: 'redgin', level: 'check',
+    what: '홍삼이 수면·각성에 영향을 준다는 보고가 있습니다.',
+    how:  '잠드는 데 변화가 있으면 진료 때 알려 주세요.' },
+  { rx: 'pain', supp: 'omega3', level: 'check',
+    what: '소염진통제와 오메가3 모두 <b>출혈 경향</b>을 조금 높일 수 있습니다.',
+    how:  '멍이 늘거나 속쓰림이 있으면 진료 때 알려 주세요.' },
+  { rx: 'pain', supp: 'ginkgo', level: 'check',
+    what: '소염진통제와 은행잎 모두 <b>출혈 경향</b>을 조금 높일 수 있습니다.',
+    how:  '멍이 늘면 진료 때 알려 주세요.' },
+  { rx: 'dm', supp: 'milk', level: 'check',
+    what: '밀크씨슬이 혈당에 영향을 준다는 보고가 있습니다. 근거는 제한적입니다.',
+    how:  '혈당 변화가 있으면 알려 주세요.' }
+];
+
+/* SPEC §4.4 — 처방약끼리. 등급은 check 고정이며 절대 warn 으로 올리지 않는다.
+   이미 처방 단계에서 DUR을 통과한 조합이라, 강하게 경고하면 앱이 의사 처방을
+   사후 부정하는 화면이 된다. (README §P3) */
+const RX_PAIR_RULES = [
+  { a: 'anti', b: 'pain', level: 'check',
+    what: '둘 다 위장에 부담을 주고 출혈 경향을 높일 수 있는 조합입니다.',
+    how:  '<b>의사가 알고 처방했을 수 있습니다.</b> 다음 진료 때 한 번 확인해 보세요.' },
+  { a: 'gi', b: 'bone', level: 'check',
+    what: '위장약이 골다공증약 흡수에 영향을 줄 수 있습니다.',
+    how:  '<b>의사가 알고 처방했을 수 있습니다.</b> 다음 진료 때 확인해 보세요.' }
+];
+
+/* SPEC §4.5 — 단독 알아두기(info). when 의 조건이 모두 참일 때만 뜬다.
+   rx/supps/conds = 모두 포함되어야 함, rxNot = 하나도 없어야 함, condsAny = 하나 이상 */
+const INFO_RULES = [
+  { id: 'multi-k', when: { supps: ['multi'], rxNot: ['anti'] }, pair: ['종합비타민'],
+    what: '종합비타민에는 비타민K가 들어 있는 경우가 많습니다. 지금 드시는 약과는 문제가 없지만, 나중에 <b>와파린 같은 항응고제</b>를 드시게 되면 꼭 알리셔야 하는 항목이에요.',
+    how:  '지금 당장 하실 일은 없습니다.' },
+  { id: 'dm-b12', when: { rx: ['dm'], supps: ['multi'] }, pair: ['당뇨약', '종합비타민'],
+    what: '당뇨약을 오래 드시면 <b>비타민B12</b>가 부족해질 수 있습니다. 종합비타민이 도움이 될 수 있어요.',
+    how:  '피로감이 심하면 진료 때 B12 수치를 여쭤보세요.' },
+  { id: 'preg', when: { conds: ['preg'] }, pair: ['임신·수유 중'],
+    what: '임신·수유 중에는 영양제도 <b>성분과 용량</b>을 따로 확인해야 합니다.',
+    how:  '드시는 제품을 산부인과나 약국에 보여 주세요.' },
+  { id: 'organ', when: { condsAny: ['kidney', 'liver'] }, pair: ['신장·간 기능'],
+    what: '신장·간 기능이 떨어져 있으면 <b>같은 용량도 다르게 작용</b>할 수 있습니다.',
+    how:  '드시는 영양제 목록을 진료 때 그대로 보여 주세요.' }
+];
+
+/* SPEC §8 — 이름 검색용 목록. 고르면 오른쪽 처방약 분류가 선택된다. */
+const DRUG_SEARCH = [
+  { name: '아모잘탄정 5/50mg',        rx: 'bp' },
+  { name: '노바스크정 5mg',           rx: 'bp' },
+  { name: '올메텍정 20mg',            rx: 'bp' },
+  { name: '다이아벡스정 500mg',       rx: 'dm' },
+  { name: '자누비아정 100mg',         rx: 'dm' },
+  { name: '크레스토정 10mg',          rx: 'chol' },
+  { name: '리피토정 20mg',            rx: 'chol' },
+  { name: '씬지로이드정 0.1mg',       rx: 'thy' },
+  { name: '신지로이드정 0.05mg',      rx: 'thy' },
+  { name: '넥시움정 20mg',            rx: 'gi' },
+  { name: '란스톤엘에프디티정 30mg',  rx: 'gi' },
+  { name: '아스피린프로텍트정 100mg', rx: 'anti' },
+  { name: '플라빅스정 75mg',          rx: 'anti' },
+  { name: '쎄레브렉스캡슐 200mg',     rx: 'pain' },
+  { name: '이지엔6프로연질캡슐',      rx: 'pain' },
+  { name: '포사맥스정 70mg',          rx: 'bone' }
+];
+
+/* SPEC §8 — 약봉투 사진의 "예시 인식 결과". 실제 OCR이 아니다.
+   셋 중 하나는 일부러 흐리게 읽힌 것으로 둔다. */
+const OCR_DEMO = [
+  { name: '아모잘탄정 5/50mg', rx: 'bp',   sure: true,  note: '잘 읽혔어요' },
+  { name: '크레스토정 10mg',   rx: 'chol', sure: true,  note: '잘 읽혔어요' },
+  { name: '씬지로0드정 0.1mg', rx: 'thy',  sure: false, note: '글자가 흐려서 확실하지 않아요' }
+];
+
+/* ========================= 규칙 데이터 블록 끝 ========================= */
+
+
+/* 등급별 표시 규약 (README §4.1) */
+const LEVELS = {
+  warn:  { cls: 'lv1', label: '주의',      icon: 'i-alert-triangle', doIcon: 'i-message' },
+  time:  { cls: 'lv2', label: '시간 조정',  icon: 'i-clock',          doIcon: 'i-check-circle' },
+  check: { cls: 'lv3', label: '확인 권장',  icon: 'i-alert-circle',   doIcon: 'i-message' },
+  info:  { cls: 'lv4', label: '알아두기',   icon: 'i-file-text',      doIcon: 'i-file-text' }
+};
+
+const DISCLAIMER =
+  '<b>이 결과는 진단이 아닙니다.</b> 복용량과 복용 시점, 기저질환은 반영하지 않았습니다. ' +
+  '약을 바꾸거나 끊는 판단은 반드시 의사·약사와 상의해 주세요. ' +
+  '이 프로토타입의 상호작용 정보는 <b>검수 전 예시 데이터</b>입니다.';
+
+
+/* ==========================================================================
+   2. 상태 — 화면 하나에 상태 기계 하나
+   ========================================================================== */
+const state = {
+  screen: 'landing',   // landing rx search cam ocr supp profile analyzing report
+  sheet: null,         // null | 'custom'
+  rx: [],              // 처방약 id (없어요 = 'none' 포함 가능)
+  supps: [],           // 건기식 id
+  customs: [],         // 직접 입력 문자열 — 분석 대상 아님
+  age: null,
+  conds: [],
+  q: '',               // 검색어
+  ocrPick: OCR_DEMO.map(function (o) { return o.sure; }), // 흐리게 읽힌 항목은 기본 제외
+  step: 0,             // 분석 중 진행 줄
+  appNotice: false,
+  copyFallback: ''
+};
+
+const app = document.getElementById('app');
+const sheetRoot = document.getElementById('sheet-root');
+const toastEl = document.getElementById('toast');
+
+
+/* ==========================================================================
+   3. 유틸
+   ========================================================================== */
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function nameOf(list, id) {
+  for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i].name;
+  return id;
+}
+const rxName   = function (id) { return nameOf(RX_LIST, id); };
+const suppName = function (id) { return nameOf(SUPP_LIST, id); };
+const condName = function (id) { return nameOf(COND_LIST, id); };
+function has(arr, id) { return arr.indexOf(id) !== -1; }
+
+/* 받침에 따라 은/는 을 고른다. 「은행잎는」 같은 문장이 나오면 화면 신뢰가 깎인다.
+   숫자·영문으로 끝나면 목업 표기(오메가3는)를 따라 '는'. */
+function eunNeun(word) {
+  const c = word.charCodeAt(word.length - 1);
+  if (c >= 0xAC00 && c <= 0xD7A3) return ((c - 0xAC00) % 28) ? '은' : '는';
+  return '는';
+}
+function ico(id, cls) { return '<svg class="' + (cls || 'fx-ico') + '" aria-hidden="true"><use href="#' + id + '"/></svg>'; }
+
+/* '없어요' / '해당 없음' 은 항목이 아니라 "항목 없음"의 표시다. 분석에서 걷어낸다. */
+function realRx()    { return state.rx.filter(function (id) { return id !== 'none'; }); }
+function realConds() { return state.conds.filter(function (id) { return id !== 'none'; }); }
+
+/* 대조 대상 개수 M 과 쌍의 수 K. 직접 입력 항목은 분석하지 않으므로 여기에 넣지 않는다. */
+function itemCount() { return realRx().length + state.supps.length; }
+function pairCount() { var m = itemCount(); return m * (m - 1) / 2; }
+
+let toastTimer = null;
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { toastEl.hidden = true; }, 2600);
+}
+
+
+/* ==========================================================================
+   4. 분석 — 규칙 데이터를 훑기만 한다. 조합 지식은 여기에 없다.
+   ========================================================================== */
+function analyze() {
+  const rx = realRx(), supps = state.supps, conds = realConds();
+  const findings = [];
+
+  RULES.forEach(function (r) {
+    if (has(rx, r.rx) && has(supps, r.supp)) {
+      findings.push({
+        level: r.level, pair: [rxName(r.rx), suppName(r.supp)],
+        what: r.what, how: r.how, supp: r.supp, why: r.why, suppSlot: r.suppSlot
+      });
+    }
+  });
+
+  RX_PAIR_RULES.forEach(function (r) {
+    if (has(rx, r.a) && has(rx, r.b)) {
+      findings.push({ level: r.level, pair: [rxName(r.a), rxName(r.b)], what: r.what, how: r.how });
+    }
+  });
+
+  INFO_RULES.forEach(function (r) {
+    const w = r.when;
+    const ok =
+      (w.rx    || []).every(function (id) { return has(rx, id); }) &&
+      (w.supps || []).every(function (id) { return has(supps, id); }) &&
+      (w.conds || []).every(function (id) { return has(conds, id); }) &&
+      (w.rxNot || []).every(function (id) { return !has(rx, id); }) &&
+      (!w.condsAny || w.condsAny.some(function (id) { return has(conds, id); }));
+    if (ok) findings.push({ level: 'info', pair: r.pair, what: r.what, how: r.how });
+  });
+
+  const order = { warn: 0, time: 1, check: 2, info: 3 };
+  findings.sort(function (a, b) { return order[a.level] - order[b.level]; });
+
+  const counts = { warn: 0, time: 0, check: 0, info: 0 };
+  findings.forEach(function (f) { counts[f.level]++; });
+
+  /* N 은 등급이 있는 것만 센다. 알아두기(info)는 "확인이 필요한 건수"가 아니다. */
+  return { findings: findings, counts: counts, n: counts.warn + counts.time + counts.check };
+}
+
+/* SPEC §5 — 기본 배치 후 time 규칙의 suppSlot 으로 옮긴다. */
+function buildSchedule(result) {
+  const bySupp = {};
+  result.findings.forEach(function (f) {
+    if (f.level !== 'time' || !f.supp) return;
+    if (!bySupp[f.supp]) bySupp[f.supp] = { slot: f.suppSlot, whys: [] };
+    if (bySupp[f.supp].whys.indexOf(f.why) === -1) bySupp[f.supp].whys.push(f.why);
+  });
+
+  const rows = {};
+  SLOTS.forEach(function (s) { rows[s.id] = []; });
+
+  realRx().forEach(function (id) {
+    rows[DEFAULT_SLOT[id]].push({ name: rxName(id), why: '' });
+  });
+  state.supps.forEach(function (id) {
+    const moved = bySupp[id];
+    const slot = moved ? moved.slot : DEFAULT_SLOT[id];
+    rows[slot].push({ name: suppName(id), why: moved ? moved.whys.join(' · ') : '' });
+  });
+
+  return SLOTS.filter(function (s) { return rows[s.id].length > 0; })
+              .map(function (s) { return { slot: s, items: rows[s.id] }; });
+}
+
+
+/* ==========================================================================
+   5. URL 해시 (SPEC §7) — #r=anti,thy&s=omega3,calmag&a=50&c=none
+      x= 는 직접 입력 항목. 스펙에 없지만 없으면 링크로 결과가 재현되지 않는다.
+   ========================================================================== */
+function buildHash() {
+  const parts = [
+    'r=' + state.rx.join(','),
+    's=' + state.supps.join(','),
+    'a=' + (state.age || ''),
+    'c=' + state.conds.join(',')
+  ];
+  if (state.customs.length) {
+    parts.push('x=' + state.customs.map(encodeURIComponent).join(','));
+  }
+  return '#' + parts.join('&');
+}
+function reportUrl() { return location.href.split('#')[0] + buildHash(); }
+
+function parseHash() {
+  const raw = location.hash.replace(/^#/, '');
+  if (!raw) return null;
+  const out = {};
+  raw.split('&').forEach(function (kv) {
+    const i = kv.indexOf('=');
+    if (i === -1) return;
+    out[kv.slice(0, i)] = kv.slice(i + 1);
+  });
+  if (!('r' in out) && !('s' in out) && !('a' in out) && !('c' in out)) return null;
+
+  const split = function (v, valid) {
+    if (!v) return [];
+    return v.split(',').filter(function (x) { return x && valid.indexOf(x) !== -1; });
+  };
+  const rxIds   = RX_LIST.map(function (o) { return o.id; });
+  const suppIds = SUPP_LIST.map(function (o) { return o.id; });
+  const ageIds  = AGE_LIST.map(function (o) { return o.id; });
+  const condIds = COND_LIST.map(function (o) { return o.id; });
+
+  return {
+    rx: split(out.r, rxIds),
+    supps: split(out.s, suppIds),
+    age: has(ageIds, out.a) ? out.a : null,
+    conds: split(out.c, condIds),
+    customs: out.x ? out.x.split(',').filter(Boolean).map(decodeURIComponent) : []
+  };
+}
+function applyParsed(p) {
+  state.rx = p.rx; state.supps = p.supps; state.age = p.age;
+  state.conds = p.conds; state.customs = p.customs;
+}
+
+
+/* ==========================================================================
+   6. 화면 전환 — history.pushState 로 뒤로가기를 살린다 (SPEC §2)
+   ========================================================================== */
+function go(screen, opts) {
+  opts = opts || {};
+  state.screen = screen;
+  state.sheet = opts.sheet || null;
+  state.appNotice = false;
+  state.copyFallback = '';
+
+  const url = (screen === 'report')
+    ? location.pathname + location.search + buildHash()
+    : location.pathname + location.search;
+  const snapshot = { screen: screen, sheet: state.sheet };
+
+  /* file:// 로 그냥 열었을 때 일부 브라우저는 pushState 에 SecurityError 를 던진다.
+     그때도 화면 전환 자체는 살아 있어야 한다 — 뒤로가기만 포기한다. */
+  try {
+    if (opts.replace) history.replaceState(snapshot, '', url);
+    else history.pushState(snapshot, '', url);
+  } catch (e) {
+    if (screen === 'report') location.hash = buildHash().slice(1);
+  }
+
+  render();
+  if (!opts.keepScroll) window.scrollTo(0, 0);
+}
+
+window.addEventListener('popstate', function (e) {
+  const s = e.state;
+  if (s && s.screen) {
+    state.screen = s.screen;
+    state.sheet = s.sheet || null;
+  } else {
+    /* 히스토리 진입점 — 해시가 있으면 리포트, 없으면 랜딩 */
+    const p = parseHash();
+    if (p) { applyParsed(p); state.screen = 'report'; } else { state.screen = 'landing'; }
+    state.sheet = null;
+  }
+  state.appNotice = false;
+  state.copyFallback = '';
+  render();
+  window.scrollTo(0, 0);
+});
+
+
+/* ==========================================================================
+   7. 화면 조각 — 목업 마크업을 그대로 옮기고 값만 상태에서 채운다
+   ========================================================================== */
+
+function stepsBar(current) {
+  const cls = function (i) { return i < current ? 's done' : (i === current ? 's on' : 's'); };
+  return '<div class="fx-row gap-sm">' +
+    '<div class="wf-steps"><span class="' + cls(0) + '"></span><span class="' + cls(1) + '"></span><span class="' + cls(2) + '"></span></div>' +
+    '<span class="wf-steplabel">' + (current + 1) + ' / 3</span></div>';
+}
+
+function ctaBar(countHtml, act, label) {
+  return '<div class="wf-cta">' +
+    (countHtml ? '<div class="c-count">' + ico('i-check', 'fx-ico sm') + countHtml + '</div>' : '') +
+    '<button class="big-btn primary" data-act="' + act + '">' + label + '</button></div>';
+}
+
+/* ---------- A1 랜딩 ---------- */
+function renderLanding() {
+  return '<div class="screen-body gap-md">' +
+    '<div class="wf-hero">' +
+      '<span class="h-eyebrow">모두의 복약</span>' +
+      '<div class="h-title">지금 드시는 약과 영양제,<br>같이 드셔도 괜찮을까요?</div>' +
+      '<div class="h-sub">약과 건강기능식품을 함께 확인해 드립니다. 병원과 약국에서 따로 묻기 어려웠던 조합이요.</div>' +
+    '</div>' +
+    '<div class="wf-trust">' +
+      '<div>' + ico('i-users') + '<b>가입 없음</b><span>로그인하지 않아도 결과를 봅니다</span></div>' +
+      '<div>' + ico('i-clock') + '<b>30초</b><span>세 번만 고르면 끝나요</span></div>' +
+      '<div>' + ico('i-check-circle') + '<b>무료</b><span>결제 단계가 없습니다</span></div>' +
+    '</div>' +
+    '<div class="fx-spacer"></div>' +
+    '<button class="big-btn primary" data-act="start">내 조합 확인하기' + ico('i-chevron-right') + '</button>' +
+    '<div class="fx-cap fx-center">이 결과는 진단이 아니며, 의사·약사의 판단을 대신하지 않습니다.</div>' +
+    '<div class="fx-divider"></div>' +
+    '<div class="wf-disclaim">' + DISCLAIMER + '</div>' +
+  '</div>';
+}
+
+/* ---------- A2 처방약 ---------- */
+function renderRx() {
+  const chips = RX_LIST.map(function (o) {
+    return '<button class="chip wf' + (has(state.rx, o.id) ? ' selected' : '') + '" ' +
+           'data-act="rx-toggle" data-id="' + o.id + '" aria-pressed="' + has(state.rx, o.id) + '">' + o.name + '</button>';
+  }).join('');
+
+  const n = realRx().length;
+  const count = has(state.rx, 'none')
+    ? '처방받아 드시는 약이 없다고 하셨어요'
+    : '<b>' + n + '개</b> 선택하셨어요';
+
+  return '<div class="screen-body gap-md">' +
+    stepsBar(0) +
+    '<div class="t-title">지금 처방받아<br>드시는 약이 있나요?</div>' +
+    '<div class="fx-cap16">정확한 이름을 몰라도 괜찮아요. 종류만 골라 주세요.</div>' +
+    '<div class="fx-chips">' + chips + '</div>' +
+    '<div class="fx-divider"></div>' +
+    '<div class="fx-cap">이름을 정확히 알고 계시다면</div>' +
+    '<button class="row-card" data-act="to-search">' +
+      '<div class="icon-box">' + ico('i-search') + '</div>' +
+      '<div class="grow stack gap-xs"><span class="t-body bold">약 이름으로 검색</span>' +
+      '<span class="fx-cap">봉투에 적힌 이름으로 찾기</span></div>' +
+      ico('i-chevron-right', 'fx-ico t-secondary') +
+    '</button>' +
+    '<button class="row-card" data-act="to-cam">' +
+      '<div class="icon-box">' + ico('i-camera') + '</div>' +
+      '<div class="grow stack gap-xs"><span class="t-body bold">약봉투 사진으로 찾기</span>' +
+      '<span class="fx-cap">사진 한 장이면 됩니다</span></div>' +
+      ico('i-chevron-right', 'fx-ico t-secondary') +
+    '</button>' +
+  '</div>' + ctaBar(count, 'to-supp', '다음');
+}
+
+/* ---------- B1 이름 검색 ---------- */
+function renderSearch() {
+  return '<div class="screen-header">' +
+      '<button class="sh-side" data-act="back" aria-label="뒤로">' + ico('i-chevron-left') + '</button>' +
+      '<div class="sh-title">약 이름으로 찾기</div><div class="sh-side"></div>' +
+    '</div>' +
+    '<div class="screen-body gap-md">' +
+      '<div class="row-card">' +
+        '<div class="icon-box">' + ico('i-search') + '</div>' +
+        '<div class="grow stack gap-xs">' +
+          '<input class="wf-searchinput" id="q" type="search" autocomplete="off" placeholder="약 이름 일부를 넣어 보세요" value="' + esc(state.q) + '">' +
+          '<span class="fx-cap">이름 일부만 넣어도 찾아드려요</span>' +
+        '</div>' +
+      '</div>' +
+      '<div id="search-results" class="fx-col gap-md">' + searchResults() + '</div>' +
+      '<div class="fx-divider"></div>' +
+      '<button class="big-btn ghost" data-act="back">이름을 모르겠어요 — 종류로 고르기</button>' +
+    '</div>';
+}
+function searchResults() {
+  const q = state.q.trim();
+  if (!q) return '<span class="fx-cap">봉투에 적힌 이름을 넣어 주세요. 예: 아모잘</span>';
+
+  const hits = DRUG_SEARCH.filter(function (d) { return d.name.indexOf(q) !== -1; });
+  if (!hits.length) {
+    return '<div class="warn-banner info">' + ico('i-alert-circle') +
+      '<span>찾는 약이 없으면 종류로 골라 주세요</span></div>' +
+      '<button class="big-btn secondary" data-act="back">종류로 고르기</button>';
+  }
+  return '<span class="fx-cap">검색 결과 ' + hits.length + '개</span>' +
+    hits.map(function (d) {
+      const i = DRUG_SEARCH.indexOf(d);
+      const on = has(state.rx, d.rx);
+      return '<button class="row-card" data-act="pick-drug" data-i="' + i + '">' +
+        '<div class="icon-box lg"><span class="fx-pill oval score"></span></div>' +
+        '<div class="grow stack gap-xs">' +
+          '<span class="t-body bold">' + d.name + '</span>' +
+          '<span class="fx-row gap-sm"><span class="tag rx">처방약</span>' +
+          '<span class="fx-cap">' + rxName(d.rx) + '으로 담깁니다</span></span>' +
+        '</div>' +
+        (on ? ico('i-check-circle', 'fx-ico t-blue') : ico('i-plus', 'fx-ico t-secondary')) +
+      '</button>';
+    }).join('');
+}
+
+/* ---------- B2 카메라 ---------- */
+function renderCam() {
+  return '<div class="screen-header">' +
+      '<button class="sh-side" data-act="back" aria-label="닫기">' + ico('i-x') + '</button>' +
+      '<div class="sh-title">약봉투 사진으로 찾기</div><div class="sh-side"></div>' +
+    '</div>' +
+    '<div class="wf-cam">' +
+      '<div class="cm-demo">데모 — 실제 인식이 아닙니다</div>' +
+      '<div class="cm-guide">약 이름이 보이도록<br>봉투를 비춰 주세요</div>' +
+      '<div class="cm-hint">이 프로토타입에는 카메라도 문자 인식도 붙어 있지 않습니다. 촬영을 누르면 미리 적어 둔 예시 결과가 나옵니다.</div>' +
+    '</div>' +
+    '<div class="footer-bar">' +
+      '<button class="big-btn primary" data-act="to-ocr">' + ico('i-camera', 'fx-ico lg') + '촬영하기</button>' +
+    '</div>';
+}
+
+/* ---------- B3 인식 결과 확인 ---------- */
+function renderOcr() {
+  const rows = OCR_DEMO.map(function (o, i) {
+    const on = state.ocrPick[i];
+    return '<button class="row-card" data-act="ocr-toggle" data-i="' + i + '" aria-pressed="' + on + '">' +
+      '<div class="icon-box lg' + (o.sure ? '' : ' orange') + '"><span class="fx-pill' + (o.sure ? ' oval' : '') + ' score"></span></div>' +
+      '<div class="grow stack gap-xs">' +
+        '<span class="t-body bold">' + o.name + '</span>' +
+        '<span class="fx-row gap-sm">' +
+          '<span class="tag ' + (o.sure ? 'rx' : 'warn') + '">' + (o.sure ? '처방약' : '확인 필요') + '</span>' +
+          '<span class="fx-cap">' + o.note + ' · ' + rxName(o.rx) + '</span>' +
+        '</span>' +
+      '</div>' +
+      (on ? ico('i-check-circle', 'fx-ico t-blue') : ico('i-plus', 'fx-ico t-secondary')) +
+    '</button>';
+  }).join('');
+
+  const picked = state.ocrPick.filter(Boolean).length;
+
+  return '<div class="screen-header">' +
+      '<button class="sh-side" data-act="back" aria-label="뒤로">' + ico('i-chevron-left') + '</button>' +
+      '<div class="sh-title">이렇게 읽었어요</div><div class="sh-side"></div>' +
+    '</div>' +
+    '<div class="screen-body gap-md">' +
+      '<div class="warn-banner caution">' + ico('i-alert-triangle') +
+        '<span>데모 — 실제 인식이 아닙니다. 아래 3건은 미리 적어 둔 예시 결과입니다.</span></div>' +
+      '<div class="warn-banner info">' + ico('i-alert-circle') +
+        '<span>3개를 찾았어요. 맞는지 확인해 주세요.</span></div>' +
+      rows +
+      '<span class="fx-cap">눌러서 넣고 뺄 수 있어요. 흐리게 읽힌 것은 처음부터 빼 두었습니다.</span>' +
+    '</div>' +
+    '<div class="footer-bar">' +
+      '<button class="big-btn primary" data-act="ocr-confirm">' + picked + '개 이대로 등록하기</button>' +
+    '</div>';
+}
+
+/* ---------- A3 건기식 ---------- */
+function renderSupp() {
+  const tiles = SUPP_LIST.map(function (o) {
+    const on = has(state.supps, o.id);
+    return '<button class="wf-tile' + (on ? ' on' : '') + '" data-act="supp-toggle" data-id="' + o.id + '" aria-pressed="' + on + '">' +
+      '<span class="t-emoji">' + o.emoji + '</span><span class="t-name">' + o.name + '</span></button>';
+  }).join('') +
+  '<button class="wf-tile" data-act="open-custom">' +
+    '<span class="t-emoji">✏️</span><span class="t-name">직접 입력' +
+    (state.customs.length ? ' ' + state.customs.length : '') + '</span></button>';
+
+  const customBlock = state.customs.length
+    ? '<div class="fx-col gap-sm">' +
+        '<div class="fx-cap">직접 적어 주신 것 — 이번 분석에서는 <b>제외</b>되고, 리포트의 「확인하지 못한 것」에 그대로 실립니다.</div>' +
+        '<div class="fx-chips tight">' + state.customs.map(function (c, i) {
+          return '<span class="chip sm">' + esc(c) +
+            '<button class="wf-x" data-act="del-custom" data-i="' + i + '" aria-label="빼기">✕</button></span>';
+        }).join('') + '</div>' +
+      '</div>'
+    : '';
+
+  return '<div class="screen-body gap-md">' +
+    stepsBar(1) +
+    '<div class="t-title">영양제나<br>건강기능식품은요?</div>' +
+    '<div class="warn-banner info">' + ico('i-alert-circle') +
+      '<span>약과 함께 드시면 서로 영향을 주는 것들이 있습니다. 여기가 가장 중요해요.</span></div>' +
+    '<div class="wf-grid">' + tiles + '</div>' +
+    customBlock +
+  '</div>' + ctaBar('<b>' + state.supps.length + '개</b> 선택하셨어요', 'to-profile', '다음');
+}
+
+/* ---------- 직접 입력 시트 ---------- */
+function renderSheet() {
+  if (state.sheet !== 'custom') return '';
+  return '<div class="wf-dim" data-act="close-sheet"></div>' +
+    '<div class="wf-sheet" role="dialog" aria-label="직접 입력">' +
+      '<div class="sh-grab"></div>' +
+      '<div class="t-title">드시는 것을 적어 주세요</div>' +
+      '<div class="fx-cap16">여기 적으신 것은 <b>분석 대상에서 빠집니다.</b> 저희가 모르는 성분을 아는 척하지 않으려는 것이라, ' +
+        '대신 리포트의 「무엇을 확인하지 못했나요」에 적어 주신 그대로 싣습니다.</div>' +
+      '<form data-act="add-custom">' +
+        '<input class="input" id="custom-input" type="text" maxlength="40" placeholder="예: 아르기닌, 콜라겐" autocomplete="off">' +
+        '<button class="big-btn secondary" type="submit">' + ico('i-plus') + '추가하기</button>' +
+      '</form>' +
+      (state.customs.length
+        ? '<div class="fx-chips tight">' + state.customs.map(function (c, i) {
+            return '<span class="chip sm">' + esc(c) +
+              '<button class="wf-x" data-act="del-custom" data-i="' + i + '" aria-label="빼기">✕</button></span>';
+          }).join('') + '</div>'
+        : '<span class="fx-cap">아직 적으신 것이 없습니다.</span>') +
+      '<button class="big-btn primary" data-act="close-sheet">닫기</button>' +
+    '</div>';
+}
+
+/* ---------- A4 프로필 ---------- */
+function renderProfile() {
+  const ages = AGE_LIST.map(function (o) {
+    return '<button class="chip wf sm' + (state.age === o.id ? ' selected' : '') + '" ' +
+      'data-act="age" data-id="' + o.id + '" aria-pressed="' + (state.age === o.id) + '">' + o.name + '</button>';
+  }).join('');
+  const conds = COND_LIST.map(function (o) {
+    const on = has(state.conds, o.id);
+    return '<button class="chip wf sm' + (on ? ' selected' : '') + '" ' +
+      'data-act="cond" data-id="' + o.id + '" aria-pressed="' + on + '">' + o.name + '</button>';
+  }).join('');
+
+  return '<div class="screen-body gap-md">' +
+    stepsBar(2) +
+    '<div class="t-title">마지막으로<br>두 가지만요</div>' +
+    '<div class="section-title first">연세가 어떻게 되세요?</div>' +
+    '<div class="fx-chips tight">' + ages + '</div>' +
+    '<div class="section-title">해당되는 것이 있나요?</div>' +
+    '<div class="fx-chips tight">' + conds + '</div>' +
+    '<div class="fx-divider"></div>' +
+    '<div class="card fx-strip">' +
+      '<div><b>' + realRx().length + '</b><span>처방약</span></div>' +
+      '<div><b>' + state.supps.length + '</b><span>건강기능식품</span></div>' +
+      '<div><b>' + pairCount() + '</b><span>확인할 조합</span></div>' +
+    '</div>' +
+    (state.customs.length
+      ? '<div class="fx-cap">직접 입력하신 ' + state.customs.length + '개는 대조 대상에서 빠지고, 리포트에 그대로 실립니다.</div>'
+      : '') +
+  '</div>' +
+  '<div class="wf-cta"><button class="big-btn primary" data-act="analyze">' +
+    ico('i-shield-check') + '분석하기</button></div>';
+}
+
+/* ---------- A5 분석 중 ---------- */
+function renderAnalyzing() {
+  const lines = [
+    '고르신 ' + itemCount() + '개를 정리했어요',
+    '만나는 ' + pairCount() + '쌍을 대조하는 중',
+    '리포트를 만들고 있어요'
+  ];
+  const html = lines.map(function (t, i) {
+    const cls = i < state.step ? 'wf-line done' : (i === state.step ? 'wf-line now' : 'wf-line');
+    return '<div class="' + cls + '"><span class="l-dot">' +
+      (i < state.step ? ico('i-check', 'fx-ico sm') : '') + '</span><span>' + t + '</span></div>';
+  }).join('');
+
+  return '<div class="screen-body gap-lg">' +
+    '<div class="fx-spacer"></div>' +
+    '<div class="wf-scan">' + ico('i-shield-check', 'fx-ico xl') + '</div>' +
+    '<div class="t-title fx-center">조합을 확인하고 있어요</div>' +
+    '<div class="wf-lines">' + html + '</div>' +
+    '<div class="fx-spacer"></div>' +
+    '<div class="fx-cap fx-center">잠시만요. 곧 끝납니다.</div>' +
+  '</div>';
+}
+
+/* ---------- A6~A9 + C1 리포트 (한 페이지 스크롤) ---------- */
+function renderReport() {
+  const res = analyze();
+  const m = itemCount(), k = pairCount();
+  const rx = realRx();
+
+  /* 6.1 판정 블록 */
+  const verdict = res.n > 0
+    ? '<div class="wf-verdict warn"><div class="v-num">' + res.n + '</div>' +
+      '<div class="v-label">가지 확인이 필요해요</div>' +
+      '<div class="v-sub">드시는 ' + m + '개가 만나는 ' + k + '쌍을 대조한 결과입니다</div></div>'
+    : '<div class="wf-verdict clear"><div class="v-num">0</div>' +
+      '<div class="v-label">확인된 주의 신호는 없습니다</div>' +
+      '<div class="v-sub">다만 아무 문제가 없다는 뜻은 아닙니다. 아래를 꼭 읽어 주세요.</div></div>';
+
+  const strip = '<div class="card fx-strip">' +
+    '<div><b>' + res.counts.warn + '</b><span>주의</span></div>' +
+    '<div><b>' + res.counts.time + '</b><span>시간 조정</span></div>' +
+    '<div><b>' + res.counts.check + '</b><span>확인 권장</span></div></div>';
+
+  /* 확인한 것 */
+  const listOr = function (ids, f) {
+    return ids.length ? ids.map(f).join(' · ') : '고르신 것이 없습니다';
+  };
+  const checked = '<div class="card fx-col gap-sm">' +
+    '<div class="fx-row gap-sm"><span class="tag ' + (rx.length ? 'rx' : 'gray') + '">처방약 ' + rx.length + '</span>' +
+      '<span class="fx-cap">' + listOr(rx, rxName) + '</span></div>' +
+    '<div class="fx-row gap-sm"><span class="tag ' + (state.supps.length ? 'suppl' : 'gray') + '">건강기능식품 ' + state.supps.length + '</span>' +
+      '<span class="fx-cap">' + listOr(state.supps, suppName) + '</span></div>' +
+    (state.age ? '<div class="fx-row gap-sm"><span class="tag gray">' + nameOf(AGE_LIST, state.age) + '</span>' +
+      '<span class="fx-cap">' + (realConds().length ? realConds().map(condName).join(' · ') : '해당 사항 없음') + '</span></div>' : '') +
+  '</div>';
+
+  /* 6.2 / A7 상호작용 카드 */
+  const cards = res.findings.map(function (f) {
+    const L = LEVELS[f.level];
+    return '<div class="wf-find ' + L.cls + '">' +
+      '<span class="f-lv">' + ico(L.icon, 'fx-ico sm') + L.label + '</span>' +
+      '<div class="wf-pair">' + f.pair.map(function (p, i) {
+        return (i ? '<span class="p-x">×</span>' : '') + '<span class="p-item">' + p + '</span>';
+      }).join('') + '</div>' +
+      '<div class="f-what">' + f.what + '</div>' +
+      '<div class="f-do">' + ico(L.doIcon) + '<span>' + f.how + '</span></div>' +
+    '</div>';
+  }).join('');
+
+  const findingsSection = res.findings.length
+    ? '<div class="section-title wf-anchor" id="findings">무엇이 문제인가요</div>' +
+      '<div class="fx-col gap-md">' + cards + '</div>'
+    : '';
+
+  /* A8 복용 시간표 */
+  const sched = buildSchedule(res);
+  const warnSupps = res.findings.filter(function (f) { return f.level === 'warn'; })
+    .map(function (f) { return suppName(f.supp); })
+    .filter(function (v, i, a) { return a.indexOf(v) === i; });
+
+  const timeSection = sched.length
+    ? '<div class="section-title wf-anchor" id="timetable">오늘부터 이렇게 드셔 보세요</div>' +
+      '<div class="fx-cap16">시간만 바꿔도 해결되는 것이 있습니다.</div>' +
+      '<div class="card" style="margin-top:8px">' +
+        '<div class="wf-time">' + sched.map(function (row) {
+          const plain = row.items.filter(function (it) { return !it.why; });
+          const moved = row.items.filter(function (it) { return it.why; });
+          return '<div class="tm-row">' +
+            '<div class="tm-when">' + row.slot.label + '<span>' + row.slot.time + '</span></div>' +
+            '<div class="tm-what">' +
+              (plain.length ? '<div class="n">' + plain.map(function (it) { return it.name; }).join(' · ') + '</div>' : '') +
+              moved.map(function (it) {
+                return '<div class="n">' + it.name + '</div><div class="why">' + it.why + '</div>';
+              }).join('') +
+            '</div></div>';
+        }).join('') + '</div>' +
+      '</div>' +
+      (warnSupps.length
+        ? '<div class="warn-banner caution" style="margin-top:16px">' + ico('i-alert-triangle') +
+          '<span>' + warnSupps.join(' · ') + eunNeun(warnSupps[warnSupps.length - 1]) +
+          ' 시간을 띄운다고 해소되는 항목이 아닙니다. 함께 드시는 것 자체를 진료 때 상의해 주세요.</span></div>'
+        : '') +
+      '<div class="wf-disclaim" style="margin-top:16px"><b>복용 시간 제안은 일반적인 기준입니다.</b> ' +
+        '처방전에 적힌 복용법이 우선이며, 바꾸기 전에 약사에게 확인해 주세요.</div>'
+    : '';
+
+  /* 6.2 무엇을 확인하지 못했나요 — N 과 무관하게 항상 */
+  const missItem = function (html) {
+    return '<div class="fx-row top gap-sm">' + ico('i-alert-circle', 'fx-ico sm t-secondary') +
+      '<span class="t-body grow">' + html + '</span></div>';
+  };
+  const notChecked = '<div class="section-title wf-anchor" id="notchecked">무엇을 확인하지 못했나요</div>' +
+    '<div class="card fx-col gap-sm">' +
+      missItem('얼마나, 언제 드시는지 (복용량과 복용 시점)') +
+      missItem('신장·간 기능 등 몸 상태') +
+      missItem('같은 이름이라도 <b>함량이 다른 제품</b>') +
+      (state.customs.length
+        ? missItem('직접 입력하신 항목: <b>' + state.customs.map(esc).join(' · ') + '</b>')
+        : '') +
+    '</div>';
+
+  /* A9 앱 전환 */
+  const cmp = [
+    ['이번 조합 1회 분석', true],
+    ['결과 저장하고 다시 보기', false],
+    ['약이 바뀌면 자동으로 재확인', false],
+    ['복용 시간 알람', false],
+    ['약봉투 사진으로 자동 등록', false]
+  ].map(function (r) {
+    return '<div class="cp-row"><span class="cp-name">' + r[0] + '</span>' +
+      '<span class="cp-web">' + ico(r[1] ? 'i-check' : 'i-minus') + '</span>' +
+      '<span class="cp-app">' + ico('i-check') + '</span></div>';
+  }).join('');
+
+  const appSection =
+    '<div class="section-title wf-anchor" id="save">약은 계속 바뀝니다</div>' +
+    '<div class="card elevated fx-col gap-sm">' +
+      '<div class="fx-lead">오늘 결과는 <b>오늘 조합</b> 기준이에요. 약이 하나만 바뀌어도 결과가 달라집니다.</div>' +
+    '</div>' +
+    '<div class="section-title">웹에서 되는 것, 앱에서 되는 것</div>' +
+    '<div class="card"><div class="wf-compare">' +
+      '<div class="cp-row cp-head"><span class="cp-name"></span><span class="cp-web">웹</span><span class="cp-app">앱</span></div>' +
+      cmp +
+    '</div></div>' +
+    '<div style="height:8px"></div>' +
+    '<button class="big-btn primary" data-act="app-soon">' + ico('i-smartphone') + '앱에서 계속 관리하기</button>' +
+    (state.appNotice
+      ? '<div class="warn-banner info">' + ico('i-alert-circle') +
+        '<span>앱 출시 후 연결됩니다. 아직 받으실 수 있는 앱이 없어 링크를 걸어 두지 않았습니다.</span></div>'
+      : '') +
+    '<button class="big-btn secondary" data-act="copy-link">' + ico('i-share') + '결과 링크 복사</button>' +
+    (state.copyFallback
+      ? '<div class="fx-col gap-sm"><span class="fx-cap">브라우저가 복사를 막았습니다. 아래 주소를 직접 복사해 주세요.</span>' +
+        '<input class="input" readonly value="' + esc(state.copyFallback) + '" onclick="this.select()"></div>'
+      : '') +
+    '<div class="fx-cap fx-center">이 링크에는 어떤 약을 고르셨는지가 담깁니다. 보내실 곳을 확인해 주세요.</div>';
+
+  return '<div class="screen-body gap-md">' +
+    verdict +
+    strip +
+    '<div class="section-title">확인한 것</div>' +
+    checked +
+    (res.findings.length
+      ? '<button class="big-btn primary" data-act="scrollto" data-target="findings">무엇이 문제인지 보기' + ico('i-arrow-down') + '</button>'
+      : '') +
+    findingsSection +
+    (sched.length && res.findings.length
+      ? '<button class="big-btn primary" data-act="scrollto" data-target="timetable">그럼 어떻게 먹어야 하나요?' + ico('i-arrow-down') + '</button>'
+      : '') +
+    timeSection +
+    notChecked +
+    '<div class="warn-banner caution">' + ico('i-repeat') +
+      '<span>약이 바뀌면 결과도 바뀝니다. 새 약을 받으시면 다시 확인해 주세요.</span></div>' +
+    '<div class="wf-disclaim">' + DISCLAIMER + '</div>' +
+    appSection +
+    '<div class="fx-divider"></div>' +
+    '<button class="big-btn ghost" data-act="restart">다른 조합으로 다시 해보기</button>' +
+  '</div>';
+}
+
+
+/* ==========================================================================
+   8. 렌더 — 화면 하나당 함수 하나
+   ========================================================================== */
+const RENDERERS = {
+  landing: renderLanding,
+  rx: renderRx,
+  search: renderSearch,
+  cam: renderCam,
+  ocr: renderOcr,
+  supp: renderSupp,
+  profile: renderProfile,
+  analyzing: renderAnalyzing,
+  report: renderReport
+};
+
+function render() {
+  app.innerHTML = RENDERERS[state.screen]();
+  sheetRoot.innerHTML = renderSheet();
+  document.body.style.overflow = state.sheet ? 'hidden' : '';
+  if (state.sheet === 'custom') {
+    const el = document.getElementById('custom-input');
+    if (el) el.focus();
+  }
+  if (state.screen === 'search') {
+    const q = document.getElementById('q');
+    if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+  }
+}
+
+
+/* ==========================================================================
+   9. 동작
+   ========================================================================== */
+
+/* '없어요'/'해당 없음' 은 나머지와 배타 (SPEC §3) */
+function toggleExclusive(arr, id, noneId) {
+  if (id === noneId) return has(arr, noneId) ? [] : [noneId];
+  const next = arr.filter(function (x) { return x !== noneId; });
+  return has(next, id) ? next.filter(function (x) { return x !== id; }) : next.concat([id]);
+}
+
+let analyzeToken = 0;
+function startAnalyze() {
+  const token = ++analyzeToken;
+  state.step = 0;
+  go('analyzing');
+  const stepAt = function (ms, n) {
+    setTimeout(function () {
+      if (token !== analyzeToken || state.screen !== 'analyzing') return;
+      state.step = n;
+      render();
+    }, ms);
+  };
+  stepAt(850, 1);
+  stepAt(1700, 2);
+  setTimeout(function () {
+    if (token !== analyzeToken || state.screen !== 'analyzing') return;
+    /* 분석 화면은 히스토리에서 리포트로 덮어쓴다. 리포트에서 뒤로가면
+       분석이 다시 돌지 않고 곧장 기본정보 화면으로 돌아가야 하기 때문. */
+    go('report', { replace: true });
+  }, 2500);
+}
+
+function copyLink() {
+  const url = reportUrl();
+  const done = function () { toast('복사했습니다'); };
+  const fail = function () { state.copyFallback = url; render(); };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done).catch(function () { legacyCopy(url, done, fail); });
+  } else {
+    legacyCopy(url, done, fail);
+  }
+}
+function legacyCopy(text, done, fail) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:-1000px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    ok ? done() : fail();
+  } catch (e) { fail(); }
+}
+
+const ACTIONS = {
+  start:      function () { go('rx'); },
+  back:       function () { history.back(); },
+  'to-search':function () { go('search'); },
+  'to-cam':   function () { go('cam'); },
+  'to-ocr':   function () { go('ocr'); },
+  'to-supp':  function () { go('supp'); },
+  'to-profile': function () { go('profile'); },
+  analyze:    function () { startAnalyze(); },
+  restart:    function () {
+    state.rx = []; state.supps = []; state.customs = []; state.age = null;
+    state.conds = []; state.q = ''; state.ocrPick = OCR_DEMO.map(function (o) { return o.sure; });
+    go('landing');
+  },
+
+  'rx-toggle': function (el) {
+    state.rx = toggleExclusive(state.rx, el.dataset.id, 'none');
+    render();
+  },
+  'supp-toggle': function (el) {
+    const id = el.dataset.id;
+    state.supps = has(state.supps, id)
+      ? state.supps.filter(function (x) { return x !== id; })
+      : state.supps.concat([id]);
+    render();
+  },
+  age:  function (el) { state.age = el.dataset.id; render(); },
+  cond: function (el) { state.conds = toggleExclusive(state.conds, el.dataset.id, 'none'); render(); },
+
+  'open-custom':  function () { go('supp', { sheet: 'custom', keepScroll: true }); },
+  'close-sheet':  function () { history.back(); },
+  'del-custom':   function (el) { state.customs.splice(Number(el.dataset.i), 1); render(); },
+
+  'pick-drug': function (el) {
+    const d = DRUG_SEARCH[Number(el.dataset.i)];
+    if (!has(state.rx, d.rx)) state.rx = toggleExclusive(state.rx, d.rx, 'none');
+    toast(d.name + ' → ' + rxName(d.rx) + '으로 담았습니다');
+    render();
+  },
+  'ocr-toggle': function (el) {
+    const i = Number(el.dataset.i);
+    state.ocrPick[i] = !state.ocrPick[i];
+    render();
+  },
+  'ocr-confirm': function () {
+    OCR_DEMO.forEach(function (o, i) {
+      if (state.ocrPick[i] && !has(state.rx, o.rx)) state.rx = toggleExclusive(state.rx, o.rx, 'none');
+    });
+    const n = state.ocrPick.filter(Boolean).length;
+    go('rx');
+    toast(n + '개를 담았습니다');
+  },
+
+  scrollto: function (el) {
+    const t = document.getElementById(el.dataset.target);
+    if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  },
+  'app-soon':  function () { state.appNotice = true; render(); },
+  'copy-link': function () { copyLink(); }
+};
+
+document.addEventListener('click', function (e) {
+  const el = e.target.closest('[data-act]');
+  if (!el || el.tagName === 'FORM') return;
+  const fn = ACTIONS[el.dataset.act];
+  if (!fn) return;
+  e.preventDefault();
+  fn(el);
+});
+
+document.addEventListener('submit', function (e) {
+  const el = e.target.closest('[data-act="add-custom"]');
+  if (!el) return;
+  e.preventDefault();
+  const input = document.getElementById('custom-input');
+  const v = (input.value || '').trim();
+  if (!v) return;
+  if (state.customs.length >= 8) { toast('여덟 개까지 적으실 수 있어요'); return; }
+  state.customs.push(v);
+  render();
+});
+
+/* 검색은 결과 영역만 다시 그린다. 화면 전체를 다시 그리면 입력 포커스가 튄다. */
+document.addEventListener('input', function (e) {
+  if (e.target.id !== 'q') return;
+  state.q = e.target.value;
+  const box = document.getElementById('search-results');
+  if (box) box.innerHTML = searchResults();
+});
+
+
+/* ==========================================================================
+   10. 진입 — 해시가 있으면 랜딩을 건너뛰고 바로 리포트 (SPEC §7)
+   ========================================================================== */
+const parsed = parseHash();
+if (parsed) { applyParsed(parsed); state.screen = 'report'; }
+try { history.replaceState({ screen: state.screen, sheet: null }, '', location.href); } catch (e) { /* file:// 대비 */ }
+render();
+
+})();
+</script>
+</body>
+</html>
