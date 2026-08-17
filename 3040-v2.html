@@ -1,0 +1,3164 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>1분 복용 위험 분석 — 모두의 복약 (검수 전 프로토타입)</title>
+<!-- 1×1 투명 PNG. 브라우저가 /favicon.ico 를 자동으로 요청하는 것까지 막아 요청 0건을 지킨다.
+     (data:, 처럼 빈 URI 를 주면 크롬이 무효로 보고 /favicon.ico 를 그대로 때린다) -->
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==">
+<style>
+/* ==========================================================================
+   3040 변형 v2 — 라이트 단일 테마. 의료 신뢰 관습을 따른다.
+   v1 의 다크 + 보라 그라데이션 + 컬러 글로우는 전부 폐기했다.
+   색은 「심각도 전용 채널」로 남긴다 — 브랜드·관계·계열 구분에 색을 쓰지 않는다.
+   hue 70°–170°(초록·연두·민트·틸) 는 이 파일에 하나도 정의하지 않는다.
+   「주의 0건」이 가장 흔한 결과라, 초록 한 점이 「다 괜찮다」로 읽히기 때문이다.
+   ========================================================================== */
+:root {
+  /* ---- 표면·잉크 ---- */
+  --bg:           #F4F6F9;
+  --surface:      #FFFFFF;
+  --surface-sunk: #EFF2F6;
+  --line:         #E3E8EF;
+  --line-ctrl:    #C6CEDA;
+  --line-strong:  #8A94A6;
+
+  --ink:   #101828;
+  --ink-2: #475467;
+  --ink-3: #616B7D;
+  --ink-4: #6C7688;
+  --ink-5: #98A2B3;
+
+  /* ---- 브랜드: 잉크 네이비 ---- */
+  --brand-900: #16233F;
+  --brand-700: #1F3461;
+  --brand-600: #27437C;
+  --brand-500: #3A5DA8;
+  --brand-100: #E6EDF9;
+  --brand-50:  #F2F6FC;
+
+  /* ---- 심각도 4등급 ---- */
+  --sev-warn:  #B42318; --sev-warn-bg:  #FEF3F2; --sev-warn-line: #FDA29B; --sev-warn-mark: #D92D20;
+  --sev-time:  #B54708; --sev-time-bg:  #FFFAEB; --sev-time-line: #FEC84B; --sev-time-mark: #DC6803;
+  --sev-check: #175CD3; --sev-check-bg: #EFF6FF; --sev-check-line:#B2DDFF; --sev-check-mark:#1570EF;
+  --sev-info:  #475467; --sev-info-bg:  #F8F9FB; --sev-info-line: #D0D5DD; --sev-info-mark: #98A2B3;
+
+  --demo: #7A2E0E; --demo-bg: #FEF0C7; --demo-line: #F79009;
+  --focus: #1F3461; --focus-halo: rgba(31,52,97,.20);
+
+  /* 토큰 정의 한 줄만 유지한다. 화면 어디에서도 참조하지 않는다. */
+  --success-green: #36B37E;
+
+  /* ---- 공유 카드 다크 아일랜드 ---- */
+  --card-ink-1: #0B1020; --card-ink-2: #131A2E;
+  --card-fg: #F2F4F7;   --card-mut: #A6B0C0;
+  --card-line: rgba(255,255,255,.11);
+  --card-warn: #FDA29B; --card-time: #FEC84B; --card-check: #84CAFF;
+
+  /* ---- 폰트 ---- */
+  --font-ui:  'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,-apple-system,sans-serif;
+  --font-num: -apple-system, BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+
+  /* ---- 간격 ---- */
+  --s-05:2px; --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:20px;
+  --s-6:24px; --s-8:32px; --s-10:40px; --s-12:48px; --s-16:64px;
+
+  /* ---- 라운드 ---- */
+  --r-2:2px; --r-6:6px; --r-8:8px; --r-10:10px; --r-14:14px;
+  --r-18:18px; --r-24:24px; --r-28:28px; --r-pill:999px;
+
+  /* ---- 그림자 (검정 틴트만) ---- */
+  --sh-1: 0 1px 2px rgba(16,24,40,.06);
+  --sh-2: 0 1px 3px rgba(16,24,40,.07), 0 1px 2px -1px rgba(16,24,40,.06);
+  --sh-3: 0 4px 8px -2px rgba(16,24,40,.07), 0 2px 4px -2px rgba(16,24,40,.05);
+  --sh-4: 0 12px 16px -4px rgba(16,24,40,.08), 0 4px 6px -2px rgba(16,24,40,.04);
+  --sh-5: 0 24px 32px -8px rgba(16,24,40,.12), 0 8px 12px -6px rgba(16,24,40,.06);
+  --sh-btn: 0 1px 2px rgba(16,24,40,.10),
+            inset 0 1px 0 rgba(255,255,255,.14),
+            inset 0 -1px 0 rgba(0,0,0,.16);
+  --sh-focus: 0 0 0 3px var(--focus-halo);
+
+  /* ---- 모션 ---- */
+  --d-1:120ms; --d-2:180ms; --d-3:260ms; --d-4:420ms;
+  --e-out: cubic-bezier(.16,1,.3,1);
+  --e-io:  cubic-bezier(.65,0,.35,1);
+  --e-snap:cubic-bezier(.34,1.4,.64,1);
+
+  --min-touch: 48px;
+  --demo-strip-h: 36px;
+}
+
+/* ==========================================================================
+   베이스
+   ========================================================================== */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink-2);
+  font-family:var(--font-ui); font-size:16px; font-weight:400; line-height:1.68;
+  letter-spacing:0; word-break:keep-all; overflow-wrap:break-word; text-wrap:pretty;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  font-synthesis-weight:none;
+}
+button{font:inherit;color:inherit}
+svg{display:block}
+.app{
+  max-width:430px; margin:0 auto; background:var(--bg);
+  min-height:calc(100vh - var(--demo-strip-h));
+  min-height:calc(100dvh - var(--demo-strip-h));
+  display:flex; flex-direction:column;
+}
+@media (min-width:486px){
+  .app{border-left:1px solid var(--line);border-right:1px solid var(--line);box-shadow:var(--sh-2)}
+}
+.screen-body{flex:1;padding:var(--s-5);display:flex;flex-direction:column;min-width:0}
+.screen-body.no-pad{padding:0}
+
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:inherit}
+.big-btn:focus-visible,.chip:focus-visible,.wf-tile:focus-visible,.row-card:focus-visible,
+.fm-slot:focus-visible,.fm-row:focus-visible{box-shadow:var(--sh-focus)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important;
+  }
+}
+
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+
+html.big-text{font-size:118%}
+html.big-text .fx-cap{font-size:15px}
+
+/* ==========================================================================
+   타입 스케일 — 굵기는 400 과 700 둘뿐 (Malgun Gothic 은 그 둘만 가진다)
+   ========================================================================== */
+.t-body{font-size:16px;line-height:1.68}
+.t-emph{font-size:18px;font-weight:700;color:var(--ink)}
+.t-title{font-size:24px;font-weight:700;line-height:1.38;letter-spacing:-.015em;color:var(--ink);text-wrap:balance}
+.t-secondary{color:var(--ink-3)}
+.t-blue{color:var(--brand-600)}
+.bold{font-weight:700}
+.stack{display:flex;flex-direction:column}
+.grow{flex:1;min-width:0}
+.gap-xs{gap:var(--s-1)} .gap-sm{gap:var(--s-2)}
+.gap-md{gap:var(--s-4)} .gap-lg{gap:var(--s-6)}
+
+.section-title{
+  font-size:20px;font-weight:700;line-height:1.42;letter-spacing:-.01em;color:var(--ink);
+  margin:var(--s-8) 0 var(--s-2);flex:none;scroll-margin-top:56px;text-wrap:balance;
+}
+.section-title.first{margin-top:0}
+
+.fx-ico{width:24px;height:24px;flex:none}
+.fx-ico.sm{width:18px;height:18px}
+.fx-ico.lg{width:28px;height:28px}
+.fx-ico.xl{width:28px;height:28px}
+
+.fx-col{display:flex;flex-direction:column;flex:none;min-width:0}
+.fx-row{display:flex;align-items:center;flex:none;min-width:0;flex-wrap:wrap;row-gap:var(--s-1)}
+.fx-row.top{align-items:flex-start;flex-wrap:nowrap}
+.fx-center{text-align:center}
+.fx-cap{font-size:13px;line-height:1.6;color:var(--ink-3)}
+.fx-cap16{font-size:14px;line-height:1.64;color:var(--ink-3)}
+.fx-link{font-size:14px;font-weight:700;color:var(--brand-600);flex:none}
+.fx-divider{height:1px;background:var(--line);flex:none;margin:var(--s-5) 0}
+.fx-lead{font-size:18px;line-height:1.62;letter-spacing:-.005em;color:var(--ink)}
+.fx-spacer{flex:1;min-height:var(--s-4)}
+
+.fx-pill{
+  position:relative;flex:none;width:26px;height:26px;border-radius:var(--r-pill);
+  background:var(--surface-sunk);border:1.5px solid var(--line-ctrl);
+}
+.fx-pill.oval{width:34px;height:22px;border-radius:var(--r-pill)}
+.fx-pill.score::after{
+  content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:56%;height:2px;background:var(--line-ctrl);
+}
+
+.fx-strip{display:flex;align-items:stretch;flex:none}
+.fx-strip>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--s-1)}
+.fx-strip>div+div{border-left:1px solid var(--line)}
+.fx-strip b{font-family:var(--font-num);font-size:20px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.fx-strip span{font-size:12px;color:var(--ink-3);font-weight:400}
+
+.fx-chips{display:flex;flex-wrap:wrap;gap:var(--s-2);flex:none}
+.fx-chips.tight{gap:var(--s-2)}
+
+/* ==========================================================================
+   데모 띠 — 제거·약화 금지
+   ========================================================================== */
+.demo-strip{
+  position:sticky;top:0;z-index:200;min-height:var(--demo-strip-h);
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  background:var(--demo-bg);color:var(--demo);border-bottom:1px solid var(--demo-line);
+  font-size:12px;font-weight:700;line-height:1.45;padding:7px 14px;text-align:center;
+}
+.demo-strip svg{width:14px;height:14px;flex:none}
+
+/* ==========================================================================
+   버튼 / 칩 / 행 카드
+   ========================================================================== */
+.big-btn{
+  min-height:52px;width:100%;
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);
+  padding:0 var(--s-5);border:1px solid transparent;border-radius:var(--r-14);
+  font-family:inherit;font-size:17px;font-weight:700;letter-spacing:-.01em;cursor:pointer;
+  transition:background-color var(--d-2) var(--e-out),border-color var(--d-2) var(--e-out),
+             box-shadow var(--d-2) var(--e-out),transform var(--d-1) var(--e-out);
+}
+.big-btn.primary{background:var(--brand-700);color:#fff;box-shadow:var(--sh-btn)}
+.big-btn.primary:hover{background:var(--brand-600)}
+.big-btn.primary:active{transform:scale(.985);box-shadow:var(--sh-1)}
+.big-btn.secondary{background:var(--surface);color:var(--brand-600);border-color:var(--line-ctrl);box-shadow:var(--sh-1)}
+.big-btn.secondary:hover{background:var(--brand-50);border-color:var(--brand-500)}
+.big-btn.ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.big-btn.ghost:hover{background:var(--surface-sunk)}
+.big-btn.sm{min-height:40px;font-size:15px;border-radius:var(--r-10);padding:0 var(--s-3);width:auto}
+.big-btn:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none}
+
+.chip{
+  min-height:44px;display:inline-flex;align-items:center;gap:var(--s-1);padding:0 var(--s-4);
+  background:var(--surface);color:var(--ink-2);border:1px solid var(--line-ctrl);
+  border-radius:var(--r-pill);font-family:inherit;font-size:16px;font-weight:400;cursor:pointer;
+  transition:background-color var(--d-2) var(--e-out),border-color var(--d-2) var(--e-out),
+             color var(--d-2) var(--e-out),transform var(--d-1) var(--e-snap);
+}
+.chip:hover{border-color:var(--line-strong);background:var(--brand-50)}
+.chip.selected{background:var(--brand-100);border-color:var(--brand-500);color:var(--brand-600);font-weight:700}
+.chip.selected:active{transform:scale(.96)}
+.chip.sm{min-height:38px;font-size:14px;padding:0 var(--s-3)}
+.chip.wf{min-height:44px;font-size:16px;padding:0 var(--s-4)}
+
+.row-card{
+  display:flex;align-items:center;gap:var(--s-3);
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-14);
+  padding:var(--s-4);flex:none;width:100%;text-align:left;font-family:inherit;color:inherit;
+  box-shadow:var(--sh-1);
+  transition:border-color var(--d-2) var(--e-out),background-color var(--d-2) var(--e-out);
+}
+button.row-card{cursor:pointer}
+button.row-card:hover{border-color:var(--brand-500);background:var(--brand-50)}
+
+.icon-box{
+  width:40px;height:40px;border-radius:var(--r-10);
+  background:var(--brand-50);border:1px solid var(--brand-100);
+  display:flex;align-items:center;justify-content:center;flex:none;color:var(--brand-600);
+}
+.icon-box.lg{width:44px;height:44px;border-radius:var(--r-14)}
+.icon-box.orange{background:var(--sev-time-bg);border-color:var(--sev-time-line);color:var(--sev-time)}
+.icon-box.purple{background:var(--surface-sunk);border-color:var(--line);color:var(--ink-2)}
+
+/* 칩=인터랙티브=pill, 배지=정보=r-6. 형태로 눌리는 것과 아닌 것을 가른다. */
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:var(--r-6);
+     font-size:12px;font-weight:700;line-height:1.4;flex:none}
+.tag.rx{background:var(--brand-50);color:var(--brand-600)}
+.tag.suppl{background:var(--surface-sunk);color:var(--ink-2)}
+.tag.gray{background:var(--surface-sunk);color:var(--ink-3)}
+.tag.warn{background:var(--sev-warn-bg);color:var(--sev-warn)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-18);
+      padding:var(--s-5);box-shadow:var(--sh-1);flex:none}
+.card.elevated{box-shadow:var(--sh-3)}
+
+.footer-bar{flex:none;padding:var(--s-4) var(--s-5) calc(var(--s-5) + env(safe-area-inset-bottom));
+            background:var(--surface);border-top:1px solid var(--line)}
+
+.input{
+  background:var(--surface);border:1px solid var(--line-ctrl);border-radius:var(--r-10);
+  font-size:16px;font-family:inherit;color:var(--ink);padding:12px 14px;width:100%;
+}
+.input::placeholder{color:var(--ink-3)}
+
+.warn-banner{
+  display:flex;gap:var(--s-2);align-items:flex-start;
+  background:var(--sev-warn-bg);border:1px solid var(--sev-warn-line);border-radius:var(--r-14);
+  padding:var(--s-4);color:var(--sev-warn);font-size:15px;line-height:1.6;flex:none;
+}
+.warn-banner svg{flex:none;margin-top:2px}
+.warn-banner.info{background:var(--sev-check-bg);border-color:var(--sev-check-line);color:var(--sev-check)}
+.warn-banner.caution{background:var(--sev-time-bg);border-color:var(--sev-time-line);color:var(--sev-time)}
+
+/* ==========================================================================
+   화면 헤더 / 진행 표시
+   ========================================================================== */
+.screen-header{
+  flex:none;display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface);padding:var(--s-2) var(--s-3) var(--s-3);
+  border-bottom:1px solid var(--line);position:sticky;top:var(--demo-strip-h);z-index:30;
+}
+.screen-header .sh-side{width:40px;height:40px;display:flex;align-items:center;justify-content:center;
+  background:none;border:0;cursor:pointer;color:var(--ink-2)}
+.screen-header .sh-title{
+  flex:1;text-align:center;font-size:18px;font-weight:700;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+.wf-steps{display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+.wf-steps .s{height:5px;flex:1 1 0;min-width:20px;border-radius:var(--r-pill);background:var(--line)}
+.wf-steps .s.on{background:var(--brand-600)}
+.wf-steps .s.done{background:var(--brand-500)}
+.wf-steplabel{font-family:var(--font-num);font-size:13px;font-weight:700;color:var(--ink-3);flex:none}
+
+/* ==========================================================================
+   히어로 / 신뢰 3칸
+   ========================================================================== */
+.wf-hero{flex:none;background:var(--brand-900);border-radius:var(--r-24);padding:var(--s-8) var(--s-5);
+         display:flex;flex-direction:column;gap:var(--s-3)}
+.h-eyebrow{font-size:13px;font-weight:700;color:#8FB3E8;letter-spacing:0}
+.h-title{font-size:30px;font-weight:700;line-height:1.30;letter-spacing:-.02em;color:#F2F6FC;text-wrap:balance}
+.h-sub{font-size:15px;line-height:1.7;color:#A9B6D0}
+
+.wf-trust{display:flex;gap:var(--s-2);flex:none}
+.wf-trust>div{
+  flex:1;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-14);
+  padding:var(--s-3) var(--s-1);display:flex;flex-direction:column;align-items:center;gap:var(--s-1);
+  text-align:center;box-shadow:var(--sh-1);
+}
+.wf-trust svg{color:var(--brand-600)}
+.wf-trust b{font-size:14px;font-weight:700;color:var(--ink)}
+.wf-trust span{font-size:12px;color:var(--ink-3);font-weight:400;line-height:1.45}
+
+/* ==========================================================================
+   영양제 타일 — 이모지 없음, 텍스트만
+   ========================================================================== */
+.wf-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s-2);flex:none}
+.wf-tile{
+  position:relative;min-height:72px;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  padding:var(--s-3) var(--s-2);
+  background:var(--surface);border:1px solid var(--line-ctrl);border-radius:var(--r-14);
+  box-shadow:var(--sh-1);font-family:inherit;cursor:pointer;
+  transition:border-color var(--d-2) var(--e-out),background-color var(--d-2) var(--e-out),
+             box-shadow var(--d-2) var(--e-out),transform var(--d-1) var(--e-out);
+}
+.wf-tile .t-name{font-size:16px;font-weight:400;color:var(--ink-2);line-height:1.35}
+.wf-tile:hover{border-color:var(--brand-500);box-shadow:var(--sh-2)}
+.wf-tile.on{background:var(--brand-50);border-color:var(--brand-500);box-shadow:var(--sh-2)}
+.wf-tile.on .t-name{color:var(--brand-700);font-weight:700}
+.wf-tile:active{transform:scale(.97)}
+.wf-tile .t-check{
+  position:absolute;top:6px;right:6px;width:18px;height:18px;border-radius:var(--r-pill);
+  background:var(--brand-700);color:#fff;display:none;align-items:center;justify-content:center;
+  animation:pop var(--d-2) var(--e-snap);
+}
+.wf-tile.on .t-check{display:flex}
+.wf-tile .t-check svg{width:12px;height:12px}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ==========================================================================
+   하단 CTA 바
+   ========================================================================== */
+.wf-cta{
+  flex:none;background:var(--surface);border-top:1px solid var(--line);
+  padding:var(--s-3) var(--s-5) calc(var(--s-4) + env(safe-area-inset-bottom));
+  position:sticky;bottom:0;z-index:40;box-shadow:0 -4px 12px rgba(16,24,40,.06);
+}
+.wf-cta .c-count{font-size:14px;color:var(--ink-3);margin-bottom:var(--s-2);
+                 display:flex;align-items:center;gap:6px}
+.wf-cta .c-count b{color:var(--brand-600);font-family:var(--font-num)}
+.wf-cta .c-count svg{color:var(--brand-500)}
+
+/* ==========================================================================
+   분석 중
+   ========================================================================== */
+.wf-scan{width:128px;height:128px;margin:0 auto;flex:none;position:relative;
+         display:flex;align-items:center;justify-content:center;color:var(--brand-600)}
+.wf-scan .scan-ring{position:absolute;inset:0;width:100%;height:100%}
+.wf-scan .scan-track{fill:none;stroke:var(--line);stroke-width:4}
+.wf-scan .scan-sweep{fill:none;stroke:var(--brand-500);stroke-width:4;stroke-linecap:round;
+  stroke-dasharray:60 220;transform-origin:50% 50%;animation:sweep 1400ms linear infinite}
+@keyframes sweep{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.wf-lines{display:flex;flex-direction:column;gap:var(--s-2);flex:none}
+.wf-line{display:flex;align-items:center;gap:var(--s-3);font-size:15px;line-height:1.55;color:var(--ink-3)}
+.wf-line.done{color:var(--ink-2)}
+.wf-line.now{color:var(--brand-700);font-weight:700}
+.wf-line .l-dot{
+  width:20px;height:20px;border-radius:var(--r-pill);flex:none;
+  border:1.5px solid var(--line-ctrl);background:var(--surface);
+  display:flex;align-items:center;justify-content:center;
+}
+.wf-line.done .l-dot{background:var(--brand-700);border-color:var(--brand-700);color:#fff}
+.wf-line.done .l-dot svg{width:12px;height:12px}
+.wf-line.now .l-dot{border-color:var(--brand-500);border-width:3px}
+
+/* ==========================================================================
+   판정 블록 — 마크업의 「wf-verdict」 + 「clear」 클래스 순서는 절대 바꾸지 않는다
+   (check.mjs 가 그 리터럴을 찾아 「주의 없음」 판정 근처의 초록을 검사한다)
+   ========================================================================== */
+.wf-verdict{flex:none;padding:var(--s-6) var(--s-5);border-radius:var(--r-24);
+            display:flex;flex-direction:column;gap:var(--s-2)}
+.wf-verdict .v-num,.wf-verdict .v-alt{
+  font-family:var(--font-num);font-size:56px;font-weight:700;line-height:1;
+  letter-spacing:-.03em;font-variant-numeric:tabular-nums;
+}
+.wf-verdict .v-label{font-size:20px;font-weight:700;line-height:1.4}
+.wf-verdict .v-sub{font-size:14px;font-weight:400;line-height:1.64}
+.wf-verdict .v-src{font-size:13px;color:var(--ink-3);font-family:var(--font-num)}
+.wf-verdict.warn{background:var(--sev-warn-bg);border:1px solid var(--sev-warn-line)}
+.wf-verdict.warn .v-num,.wf-verdict.warn .v-label{color:var(--sev-warn)}
+.wf-verdict.warn .v-sub{color:#7A271A}
+.wf-verdict.clear{background:var(--surface);border:1px solid var(--line);box-shadow:var(--sh-1)}
+.wf-verdict.clear .v-num,.wf-verdict.clear .v-label{color:var(--ink)}
+.wf-verdict.clear .v-sub{color:var(--ink-2)}
+/* P4 를 색이 아니라 레이아웃으로 강제한다 — 눈이 「0」만 집어 갈 수 없게 */
+.wf-verdict .v-pair{display:flex;gap:var(--s-6);align-items:baseline;flex-wrap:wrap}
+.wf-verdict .v-pair>div{display:flex;flex-direction:column;gap:var(--s-1)}
+.wf-verdict .v-alt{color:var(--sev-time)}
+.wf-verdict .v-altlabel{font-size:14px;font-weight:700;color:var(--sev-time)}
+.wf-verdict .v-jump{background:none;border:0;padding:0;text-align:left;cursor:pointer;
+                    display:flex;flex-direction:column;align-items:flex-start;gap:var(--s-1)}
+.wf-verdict .v-jump .v-altlabel{text-decoration:underline;text-underline-offset:3px}
+
+/* ==========================================================================
+   finding — 한 흰 카드 안의 헤어라인 행
+   ========================================================================== */
+.findings{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-18);
+          box-shadow:var(--sh-1);overflow:hidden}
+.wf-find{position:relative;padding:var(--s-4) var(--s-4) var(--s-4) var(--s-5);
+         display:flex;flex-direction:column;gap:var(--s-2)}
+.wf-find + .wf-find{border-top:1px solid var(--line)}
+.wf-find::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--_mark)}
+.wf-find.lv1{--_mark:var(--sev-warn-mark); --_fg:var(--sev-warn); --_bg:var(--sev-warn-bg)}
+.wf-find.lv2{--_mark:var(--sev-time-mark); --_fg:var(--sev-time); --_bg:var(--sev-time-bg)}
+.wf-find.lv3{--_mark:var(--sev-check-mark);--_fg:var(--sev-check);--_bg:var(--sev-check-bg)}
+.wf-find.lv4{--_mark:var(--sev-info-mark); --_fg:var(--sev-info); --_bg:var(--sev-info-bg)}
+.f-lv{display:inline-flex;align-items:center;gap:5px;align-self:flex-start;padding:3px 9px;
+      border-radius:var(--r-6);background:var(--_bg);color:var(--_fg);font-size:12px;font-weight:700}
+.f-lv svg{width:13px;height:13px}
+.f-rule{font-family:var(--font-num);font-size:11px;font-weight:700;letter-spacing:.08em;
+        text-transform:uppercase;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.wf-pair{font-size:16px;font-weight:700;color:var(--ink)}
+.wf-pair .p-x{color:var(--ink-3);margin:0 6px;font-weight:400}
+.f-what{font-size:16px;line-height:1.68;color:var(--ink-2)}
+.f-what b{color:var(--ink);font-weight:700}
+.f-do{display:flex;gap:var(--s-2);align-items:flex-start;background:var(--surface-sunk);
+      border-radius:var(--r-10);padding:var(--s-3);font-size:15px;line-height:1.6;color:var(--ink)}
+.f-do svg{width:18px;height:18px;flex:none;margin-top:3px;color:var(--brand-600)}
+.f-meta{display:flex;flex-wrap:wrap;gap:var(--s-2);align-items:center}
+.f-why{border-top:1px dashed var(--line);padding-top:var(--s-2)}
+.f-why>summary{font-size:14px;font-weight:700;color:var(--brand-600);cursor:pointer;list-style:none}
+.f-why>summary::-webkit-details-marker{display:none}
+.f-why>summary::after{content:" \25B8";color:var(--ink-3)}
+.f-why[open]>summary::after{content:" \25BE"}
+.fw-detail{font-size:14px;line-height:1.7;color:var(--ink-2);margin:var(--s-2) 0 0}
+.fw-via{font-size:13px;color:var(--ink-3);margin:var(--s-2) 0 0}
+.f-stamp{font-size:11px;color:var(--ink-3);align-self:flex-end}
+
+/* ==========================================================================
+   기전 칩 / 근거 막대 — 전면 모노크롬. 색은 심각도 전용 채널로 남긴다
+   ========================================================================== */
+.mech-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:var(--r-6);
+           background:var(--surface-sunk);color:var(--ink-2);font-size:13px;font-weight:700}
+.mech-chip svg{width:14px;height:14px;color:var(--ink-3)}
+.mc-term{font-size:12px;font-weight:400;color:var(--ink-3);font-style:normal}
+.ev-bar{display:inline-flex;align-items:center;gap:4px}
+.ev-bar i{width:6px;height:3px;border-radius:var(--r-2);background:var(--line-ctrl);display:block}
+.ev-bar i.on{background:var(--ink-3)}
+.ev-bar em{font-size:12px;font-weight:400;color:var(--ink-3);font-style:normal;margin-left:2px}
+.ev-legend{display:flex;flex-direction:column;gap:var(--s-2)}
+.ev-legend .ev-row{display:flex;align-items:baseline;gap:var(--s-3);font-size:13px;color:var(--ink-2)}
+.ev-legend .ev-row b{font-weight:700;color:var(--ink);flex:none;width:44px}
+
+/* ==========================================================================
+   기전 패널 / 성분 지도
+   ========================================================================== */
+.mp-row{display:flex;flex-direction:column;gap:var(--s-1);padding:var(--s-3) 0}
+.mp-row + .mp-row{border-top:1px solid var(--line)}
+.mp-row.hit{padding-left:var(--s-3);border-left:2px solid var(--ink-3)}
+.mp-head{display:flex;align-items:center;gap:var(--s-2);font-size:15px;color:var(--ink-2)}
+.mp-row.hit .mp-head{font-weight:700;color:var(--ink)}
+.mp-head svg{width:18px;height:18px;flex:none;color:var(--ink-3)}
+.mp-term{font-size:12px;font-weight:400;color:var(--ink-3)}
+.mp-n{margin-left:auto;font-family:var(--font-num);font-size:13px;color:var(--ink-3);flex:none}
+.mp-items{font-size:13px;color:var(--ink-3);padding-left:26px;display:flex;flex-wrap:wrap;gap:6px 10px}
+.mp-item{display:inline-flex;align-items:center;gap:5px}
+/* 근거 수준은 심각도가 아니므로 색을 쓰지 않는다 — 모노크롬 배지 */
+/* 10px + --ink-4 는 명암비 4.08 로 AA(4.5) 미달이었다. 11px + --ink-2 로 올린다. */
+.mp-ev{font-size:11px;font-weight:700;letter-spacing:.2px;color:var(--ink-2);
+  background:var(--surface-sunk);border:1px solid var(--line);border-radius:var(--r-6);padding:1px 5px}
+.mp-note{margin:6px 0 0 26px;font-size:12px;line-height:1.6;color:var(--ink-3);
+  border-left:2px solid var(--line-ctrl);padding-left:9px}
+.mp-stamp{margin-top:var(--s-3);padding-top:var(--s-3);border-top:1px solid var(--line);
+  font-size:12px;line-height:1.6;color:var(--ink-3)}
+.mp-fam{font-family:var(--font-num);font-size:11px;font-weight:700;letter-spacing:.08em;
+        text-transform:uppercase;color:var(--ink-3);margin-top:var(--s-3)}
+.mx-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.mx-grid{border-collapse:collapse;font-size:12px;min-width:100%}
+.mx-grid th,.mx-grid td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:center;white-space:nowrap}
+.mx-grid th.rowh{text-align:left;font-weight:400;color:var(--ink-2)}
+.mx-grid th.colh{font-weight:400;color:var(--ink-3);vertical-align:bottom;line-height:1.25;
+                 white-space:normal;min-width:76px;max-width:96px}
+.mx-grid th.colh.hit{font-weight:700;color:var(--ink);background:var(--surface-sunk)}
+.mx-grid td.hit{background:var(--surface-sunk)}
+.mx-dot{display:inline-block;width:7px;height:7px;border-radius:var(--r-pill);background:var(--ink)}
+.mx-dot.rev{background:transparent;border:1.5px solid var(--ink-3)}
+.mx-legend{font-size:12px;color:var(--ink-3);margin-top:var(--s-2)}
+
+/* ==========================================================================
+   커버리지 미터
+   ========================================================================== */
+.cov-meter{display:flex;gap:3px;margin-bottom:var(--s-2)}
+.cov-meter i{flex:1;height:10px;border-radius:var(--r-2);background:var(--line);display:block}
+.cov-meter i.on{background:var(--ink-2)}
+.cov-list{display:flex;flex-direction:column;gap:var(--s-2)}
+.cov-item{display:flex;gap:var(--s-2);align-items:flex-start;font-size:14px;line-height:1.6;color:var(--ink-2)}
+.cov-item svg{width:16px;height:16px;flex:none;margin-top:4px;color:var(--ink-3)}
+.cov-sub{font-family:var(--font-num);font-size:11px;font-weight:700;letter-spacing:.08em;
+         text-transform:uppercase;color:var(--ink-3);margin-top:var(--s-4)}
+
+/* ==========================================================================
+   메서드 + 파이프라인 통합 블록
+   ========================================================================== */
+.mt-box{margin-top:var(--s-8);padding:var(--s-4);background:var(--surface-sunk);
+        border:1px solid var(--line);border-radius:var(--r-14);
+        font-size:12px;line-height:1.7;color:var(--ink-2)}
+.mt-eyebrow{font-family:var(--font-num);font-size:11px;font-weight:700;letter-spacing:.08em;
+            text-transform:uppercase;color:var(--ink-3);margin-bottom:var(--s-2)}
+.mt-step{display:flex;gap:var(--s-2);align-items:flex-start;padding:3px 0}
+.mt-step b{font-family:var(--font-num);color:var(--ink-3);font-weight:700;flex:none;width:14px}
+.mt-dl{display:grid;grid-template-columns:92px 1fr;gap:var(--s-1) var(--s-3);margin:var(--s-3) 0 0;
+       padding-top:var(--s-3);border-top:1px solid var(--line)}
+.mt-dl dt{color:var(--ink-3);font-weight:400;margin:0}
+.mt-dl dd{margin:0;color:var(--ink);font-weight:700;font-family:var(--font-num);font-variant-numeric:tabular-nums}
+.mt-note{margin-top:var(--s-3);padding-top:var(--s-3);border-top:1px solid var(--line);
+         color:var(--ink-2);font-weight:400}
+
+/* ==========================================================================
+   유형 공개
+   ========================================================================== */
+.wf-reveal{
+  flex:none;text-align:center;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r-24);box-shadow:var(--sh-2);
+  padding:var(--s-8) var(--s-5);display:flex;flex-direction:column;align-items:center;gap:var(--s-2);
+}
+.rv-cap{font-size:13px;color:var(--ink-3);letter-spacing:0}
+.rv-icon{width:64px;height:64px;border-radius:var(--r-pill);background:var(--brand-100);
+         color:var(--brand-700);display:flex;align-items:center;justify-content:center;margin-bottom:var(--s-1)}
+.rv-icon svg{width:28px;height:28px}
+.rv-name{font-size:40px;font-weight:700;line-height:1.20;letter-spacing:-.025em;color:var(--ink)}
+.rv-line{font-size:16px;color:var(--ink-2)}
+.rv-why{font-size:13px;color:var(--ink-3)}
+
+/* ==========================================================================
+   유형 노트 / 접힘 블록 공용
+   ========================================================================== */
+.fold{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-14);
+      box-shadow:var(--sh-1);padding:var(--s-3) var(--s-4)}
+.fold>summary{font-size:15px;font-weight:700;color:var(--brand-600);cursor:pointer;list-style:none;
+              min-height:28px;display:flex;align-items:center}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary::after{content:" \25B8";color:var(--ink-3);margin-left:auto}
+.fold[open]>summary::after{content:" \25BE"}
+.fold-body{font-size:14px;line-height:1.7;color:var(--ink-2);margin-top:var(--s-2);
+           padding-top:var(--s-2);border-top:1px solid var(--line)}
+
+/* ==========================================================================
+   복용 시간표
+   ========================================================================== */
+.wf-time{display:flex;flex-direction:column;flex:none}
+.wf-time .tm-row{display:flex;gap:var(--s-4);align-items:flex-start;padding:var(--s-3) 0}
+.wf-time .tm-row + .tm-row{border-top:1px solid var(--line)}
+.wf-time .tm-when{width:78px;flex:none;font-size:15px;font-weight:700;color:var(--ink);
+                  display:flex;flex-direction:column;gap:2px}
+.wf-time .tm-when span{font-family:var(--font-num);font-size:12px;font-weight:400;color:var(--ink-3)}
+.wf-time .tm-what{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--s-1)}
+.wf-time .tm-what .n{font-size:15px;color:var(--ink-2);line-height:1.5}
+.wf-time .tm-what .why{font-size:13px;line-height:1.5;color:var(--sev-time);font-weight:700}
+
+/* ==========================================================================
+   고지 / 비교표
+   ========================================================================== */
+.wf-disclaim{
+  flex:none;background:var(--surface-sunk);border:1px solid var(--line);border-radius:var(--r-14);
+  padding:var(--s-3) var(--s-4);font-size:12px;line-height:1.55;color:var(--ink-2);
+}
+.wf-disclaim b{color:var(--ink);font-weight:700}
+
+.wf-compare{display:flex;flex-direction:column;flex:none}
+.wf-compare .cp-row{display:flex;align-items:center;gap:var(--s-2);padding:10px 0;font-size:15px;line-height:1.5}
+.wf-compare .cp-row + .cp-row{border-top:1px solid var(--line)}
+.wf-compare .cp-name{flex:1;min-width:0;color:var(--ink-2)}
+.wf-compare .cp-web,.wf-compare .cp-app{width:44px;flex:none;display:flex;align-items:center;justify-content:center}
+.wf-compare .cp-web svg{width:18px;height:18px;color:var(--ink-3)}
+.wf-compare .cp-app svg{width:18px;height:18px;color:var(--brand-600)}
+.wf-compare .cp-partial{font-family:var(--font-num);font-size:14px;color:var(--ink-3)}
+.wf-compare .cp-head{font-family:var(--font-num);font-size:11px;font-weight:700;letter-spacing:.08em;
+                     text-transform:uppercase;color:var(--ink-3);padding-bottom:var(--s-2)}
+.wf-compare .cp-head .cp-app{color:var(--brand-600)}
+
+/* ==========================================================================
+   바텀시트 / 딤 / 토스트
+   ========================================================================== */
+.wf-dim{position:fixed;inset:0;z-index:300;background:rgba(16,24,40,.45);border:none;padding:0;
+        animation:fade-in var(--d-3) var(--e-out)}
+.wf-sheet{
+  position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:430px;z-index:310;
+  background:var(--surface);border-radius:var(--r-28) var(--r-28) 0 0;box-shadow:var(--sh-5);
+  padding:var(--s-3) var(--s-5) calc(var(--s-6) + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;gap:var(--s-4);max-height:86vh;overflow-y:auto;
+  animation:sheet-in var(--d-3) var(--e-out);
+}
+.sh-grab{width:36px;height:4px;border-radius:var(--r-pill);background:var(--line-ctrl);
+         margin:0 auto var(--s-2);flex:none}
+@keyframes sheet-in{from{transform:translate(-50%,24px);opacity:.6}to{transform:translate(-50%,0);opacity:1}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+
+.wf-toast{
+  position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:400;
+  background:var(--brand-900);color:#fff;border-radius:var(--r-pill);padding:11px 18px;
+  font-size:14px;font-weight:700;line-height:1.5;max-width:92vw;text-align:center;
+  box-shadow:var(--sh-4);
+}
+.wf-toast[hidden]{display:none}
+
+.wf-anchor{scroll-margin-top:56px}
+.wf-x{background:none;border:none;font-family:inherit;cursor:pointer;padding:0 0 0 6px;
+      color:var(--ink-3);font-size:14px;font-weight:700}
+.wf-searchinput{
+  border:none;background:transparent;outline:none;font-family:inherit;font-size:16px;
+  font-weight:400;color:var(--ink);width:100%;padding:0;
+}
+.wf-searchinput::placeholder{color:var(--ink-3)}
+.wf-sharehint{font-size:12px;color:var(--ink-3);text-align:center;line-height:1.55}
+
+/* ==========================================================================
+   카메라 뷰 (데모)
+   ========================================================================== */
+.wf-cam{flex:1;background:var(--brand-900);position:relative;display:flex;
+        align-items:center;justify-content:center;min-height:340px}
+.wf-cam .cm-guide{
+  width:74%;height:46%;border:2px dashed rgba(255,255,255,.6);border-radius:var(--r-18);
+  display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.86);
+  font-size:15px;font-weight:700;text-align:center;line-height:1.6;padding:var(--s-4);
+}
+.wf-cam .cm-hint{
+  position:absolute;left:var(--s-4);right:var(--s-4);bottom:var(--s-4);
+  background:rgba(0,0,0,.55);color:#fff;border-radius:var(--r-10);padding:10px 13px;
+  font-size:13px;line-height:1.55;text-align:center;
+}
+.wf-cam .cm-demo{
+  position:absolute;left:var(--s-4);right:var(--s-4);top:var(--s-4);
+  background:var(--demo-bg);color:var(--demo);border:1px solid var(--demo-line);
+  border-radius:var(--r-10);padding:8px 12px;font-size:12px;font-weight:700;text-align:center;
+}
+
+/* ==========================================================================
+   공유 카드 — 유일한 다크 아일랜드. 라디얼 글로우 없음
+   ========================================================================== */
+.wf-sharecard{
+  width:100%;max-width:320px;margin:0 auto;aspect-ratio:9/16;flex:none;
+  background:linear-gradient(170deg,var(--card-ink-2) 0%,var(--card-ink-1) 100%);
+  border-radius:var(--r-24);box-shadow:var(--sh-4);padding:var(--s-6) var(--s-5);
+  display:flex;flex-direction:column;justify-content:space-between;color:var(--card-fg);overflow:hidden;
+}
+.sc-badge{font-size:12px;color:var(--card-mut)}
+.sc-top{display:flex;flex-direction:column;align-items:flex-start;gap:var(--s-2)}
+.sc-icon{width:44px;height:44px;color:var(--card-fg)}
+.sc-tname{font-size:28px;font-weight:700;letter-spacing:-.02em;color:var(--card-fg)}
+.sc-tline{font-size:14px;color:var(--card-mut)}
+.sc-mid{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;padding:var(--s-3) 0}
+.sc-bot{display:flex;flex-direction:column;gap:var(--s-2);flex:none}
+.sc-stat{font-size:13px;color:var(--card-mut);line-height:1.55}
+.sc-stat b{font-family:var(--font-num);color:var(--card-fg);font-size:18px}
+.sc-chips{display:flex;flex-wrap:wrap;gap:6px}
+.sc-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--card-line);
+         border-radius:var(--r-6);padding:4px 9px;font-size:12px;font-weight:700;color:var(--card-fg)}
+.sc-chip i{width:6px;height:6px;border-radius:var(--r-pill);flex:none;background:currentColor}
+.sc-chip.sc-warn{color:var(--card-warn)} .sc-chip.sc-time{color:var(--card-time)}
+.sc-chip.sc-check{color:var(--card-check)} .sc-chip.sc-none{color:var(--card-mut);font-weight:400}
+.sc-foot{display:flex;align-items:center;justify-content:space-between;gap:var(--s-2);flex:none}
+.sc-word{font-size:15px;font-weight:700;color:var(--card-fg)}
+.sc-tag{font-size:12px;color:var(--card-mut)}
+/* 카드 안에 박는 데모 표식 — 캡처본에도 반드시 따라가야 한다 */
+.sc-demo{flex:none;margin-top:var(--s-2);padding-top:var(--s-2);
+  border-top:1px solid var(--card-line);
+  font-size:11px;font-weight:600;letter-spacing:.1px;color:var(--card-mut);text-align:center}
+
+/* 대조한 쌍 = 점 하나. 이름은 안 실리고 규모만 보인다. (리포트 본문용) */
+.sc-grid{display:flex;flex-wrap:wrap;gap:7px}
+.sc-dot{width:12px;height:12px;border-radius:var(--r-pill);background:var(--line);flex:none}
+.sc-dot.sc-warn{background:var(--sev-warn-mark)}
+.sc-dot.sc-time{background:var(--sev-time-mark)}
+.sc-dot.sc-check{background:var(--sev-check-mark)}
+.card .sc-stat{color:var(--ink-3)}
+.card .sc-stat b{color:var(--ink)}
+.card .sc-more{color:var(--ink-3)}
+.card .sc-chip{border-color:var(--line);color:var(--ink-2);background:var(--surface-sunk)}
+.card .sc-chip.sc-warn{color:var(--sev-warn)}
+.card .sc-chip.sc-time{color:var(--sev-time)}
+.card .sc-chip.sc-check{color:var(--sev-check)}
+.card .sc-chip.sc-none{color:var(--ink-3)}
+
+/* ---------- 4축 레이더 (공유 카드 안에서만 쓴다) ---------- */
+.rd-wrap{position:relative;width:100%;max-width:190px;margin:0 auto;aspect-ratio:1}
+.rd{width:100%;height:100%;display:block;overflow:visible}
+.rd-ring{fill:none;stroke:rgba(255,255,255,.14);stroke-width:1}
+.rd-ax{stroke:rgba(255,255,255,.10);stroke-width:1}
+.rd-area{fill:rgba(255,255,255,.16);stroke:#C7D3E8;stroke-width:1.75;stroke-linejoin:round}
+.rd-dot{fill:#E6EDF9}
+.rd-dot.off{fill:rgba(255,255,255,.22)}
+.rd-l{position:absolute;font-size:11px;font-weight:700;color:var(--card-mut);white-space:nowrap}
+.rd-l.t{top:-6px;left:50%;transform:translateX(-50%)}
+.rd-l.b{bottom:-6px;left:50%;transform:translateX(-50%)}
+.rd-l.l{left:-8px;top:50%;transform:translateY(-50%)}
+.rd-l.r{right:-8px;top:50%;transform:translateY(-50%)}
+
+/* ==========================================================================
+   가족 보드
+   ========================================================================== */
+.fm-list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-18);
+         box-shadow:var(--sh-1);overflow:hidden}
+.fm-row{width:100%;display:flex;align-items:center;gap:var(--s-3);padding:var(--s-4);
+        background:none;border:0;cursor:pointer;text-align:left;
+        transition:background-color var(--d-2) var(--e-out)}
+.fm-item{display:flex;align-items:stretch}
+.fm-item + .fm-item{border-top:1px solid var(--line)}
+.fm-item .fm-row{flex:1;min-width:0}
+.fm-del{flex:none;width:44px;display:flex;align-items:center;justify-content:center;
+  background:none;border:0;border-left:1px solid var(--line);cursor:pointer;color:var(--ink-5)}
+.fm-del:hover{background:var(--sev-warn-bg);color:var(--sev-warn)}
+.fm-row + .fm-row{border-top:1px solid var(--line)}
+.fm-row:hover{background:var(--brand-50)}
+.fm-main{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.fm-label{font-size:16px;font-weight:700;color:var(--ink)}
+.fm-meta{font-size:13px;color:var(--ink-3);font-family:var(--font-num)}
+.fm-type{font-size:12px;font-weight:700;padding:3px 9px;border-radius:var(--r-6);
+         background:var(--surface-sunk);color:var(--ink-2);flex:none}
+.fm-when{font-size:12px;color:var(--ink-3);font-family:var(--font-num);flex:none;
+         display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right}
+.fm-row svg{color:var(--ink-3)}
+
+.fm-slots{display:flex;flex-direction:column;gap:var(--s-2)}
+.fm-slot{display:flex;flex-direction:column;gap:var(--s-2);padding:var(--s-4);
+         background:transparent;border:1px dashed var(--line-ctrl);border-radius:var(--r-14)}
+.fm-slot .fm-label{color:var(--ink-3);font-weight:400}
+.fm-slot-btns{display:flex;gap:var(--s-2);flex-wrap:wrap}
+
+.fm-demo{background-image:repeating-linear-gradient(45deg,transparent 0 6px,
+         rgba(102,112,133,.07) 6px 12px);
+         border:1px dashed var(--line-ctrl);border-radius:var(--r-14);opacity:.85;cursor:default}
+.fm-demo .fm-row:hover{background:transparent}
+.fm-badge{font-size:11px;border:1px dashed var(--line-ctrl);border-radius:var(--r-pill);
+          padding:2px 8px;color:var(--ink-3);flex:none}
+
+.fm-ctx{display:flex;align-items:center;gap:var(--s-2);padding:var(--s-2) var(--s-3);
+        background:var(--brand-50);border:1px solid var(--brand-100);border-radius:var(--r-10);
+        font-size:13px;color:var(--brand-700);margin-bottom:var(--s-3)}
+.fm-ctx svg{color:var(--brand-600);flex:none}
+.fm-ctx-t{flex:1;min-width:0}
+.fm-ctx-x{background:none;border:0;color:var(--brand-600);font-size:13px;font-weight:700;
+          cursor:pointer;text-decoration:underline;flex:none}
+.fm-done{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--brand-600)}
+.fm-done svg{width:13px;height:13px}
+
+/* ==========================================================================
+   초대 시트
+   ========================================================================== */
+.inv-tabs{display:flex;gap:var(--s-2)}
+.inv-msgs{display:flex;flex-direction:column;gap:var(--s-2)}
+.inv-msg{width:100%;text-align:left;background:var(--surface);border:1px solid var(--line-ctrl);
+         border-radius:var(--r-14);padding:var(--s-3) var(--s-4);font-family:inherit;font-size:15px;
+         line-height:1.6;color:var(--ink-2);cursor:pointer;display:flex;gap:var(--s-3);align-items:flex-start;
+         transition:border-color var(--d-2) var(--e-out),background-color var(--d-2) var(--e-out)}
+.inv-msg:hover{border-color:var(--brand-500);background:var(--brand-50)}
+.inv-msg.on{border-color:var(--brand-500);background:var(--brand-50);color:var(--ink)}
+.inv-radio{width:18px;height:18px;border-radius:var(--r-pill);border:1.5px solid var(--line-ctrl);
+           flex:none;margin-top:4px;position:relative}
+.inv-msg.on .inv-radio{border-color:var(--brand-600)}
+.inv-msg.on .inv-radio::after{content:"";position:absolute;inset:3px;border-radius:var(--r-pill);
+                              background:var(--brand-700)}
+.inv-nolink{font-size:11px;color:var(--ink-3);display:block;margin-top:2px}
+.inv-text{width:100%;min-height:88px;resize:vertical;background:var(--surface-sunk);
+          border:1px solid var(--line-ctrl);border-radius:var(--r-10);padding:var(--s-3);
+          font-family:inherit;font-size:15px;line-height:1.6;color:var(--ink)}
+.inv-note{font-size:12px;color:var(--ink-3);line-height:1.6}
+
+/* ==========================================================================
+   리포트 진입 스태거
+   ========================================================================== */
+.stagger>*{animation:rise var(--d-4) var(--e-out) both}
+.stagger>:nth-child(1){animation-delay:0ms}   .stagger>:nth-child(2){animation-delay:40ms}
+.stagger>:nth-child(3){animation-delay:80ms}  .stagger>:nth-child(4){animation-delay:120ms}
+.stagger>:nth-child(5){animation-delay:160ms} .stagger>:nth-child(6){animation-delay:200ms}
+.stagger>:nth-child(7){animation-delay:240ms} .stagger>:nth-child(n+8){animation-delay:280ms}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* 포커스 후광은 컴포넌트 규칙보다 뒤에 와야 이긴다 (.big-btn.secondary 등이 box-shadow 를 쓴다) */
+.big-btn:focus-visible,.chip:focus-visible,.wf-tile:focus-visible,.row-card:focus-visible,
+.fm-slot:focus-visible,.fm-row:focus-visible,.inv-msg:focus-visible,
+.v-jump:focus-visible,.fm-ctx-x:focus-visible{box-shadow:var(--sh-focus)}
+</style>
+</head>
+<body>
+
+<!-- 아이콘 스프라이트 — mockup/_scaffold.html 사본. 인라인이라 외부 요청이 없다. -->
+<svg style="display:none" aria-hidden="true">
+  <!-- 아이콘: Lucide(ISC) / Feather(MIT) 계열 패스를 인라인. 외부 요청 없음.
+       규격 통일: viewBox 0 0 24 24 / fill none / stroke currentColor / stroke-width 1.75 -->
+  <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></symbol>
+  <symbol id="i-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m10.29 3.86-8.18 14a2 2 0 0 0 1.71 3h16.36a2 2 0 0 0 1.71-3l-8.18-14a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-alert-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21.8 10A10 10 0 1 1 17 3.34"/><path d="m9 11 3 3L22 4"/></symbol>
+  <symbol id="i-shield-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M15 2v5h5"/><path d="M9 13h6"/><path d="M9 17h6"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
+  <symbol id="i-smartphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18.5h2"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6 12 3l3 3"/><path d="M12 3v13"/><path d="M6 12H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-1"/></symbol>
+  <symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16"/><path d="m18 14-6 6-6-6"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h12"/></symbol>
+
+  <!-- 유형 엠블럼 8 -->
+  <symbol id="i-t-basic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></symbol>
+  <symbol id="i-t-vital" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="i-t-beauty" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M2 9h20"/><path d="m12 21 4-12-2-6"/><path d="m12 21-4-12 2-6"/></symbol>
+  <symbol id="i-t-gut" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7 6.7 8a7.5 7.5 0 1 0 10.6 0Z"/></symbol>
+  <symbol id="i-t-minimal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 3.8a5.5 5.5 0 0 0-7.8 0L3 13.2V21h7.8l9.4-9.4a5.5 5.5 0 0 0 0-7.8Z"/><path d="M16 8 2 22"/><path d="M17.5 15H9"/></symbol>
+  <symbol id="i-t-broad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m16.2 7.8-2.9 6.5-6.5 2.9 2.9-6.5 6.5-2.9Z"/></symbol>
+  <symbol id="i-t-stack" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="12" height="12" rx="2"/><path d="M9 21h10a2 2 0 0 0 2-2V9"/></symbol>
+  <symbol id="i-t-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+
+  <!-- 기전 계열 4 -->
+  <symbol id="i-mech-absorb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9m0 0-3-3m3 3 3-3M5 14v4a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-4"/></symbol>
+  <symbol id="i-mech-meta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 13.7-5.7M20 12a8 8 0 0 1-13.7 5.7M17 3v4h-4M7 21v-4h4"/></symbol>
+  <symbol id="i-mech-add" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 12a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0M5.5 12a4.5 4.5 0 1 0 9 0 4.5 4.5 0 0 0-9 0"/></symbol>
+  <symbol id="i-mech-state" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6M6 21v-3a6 6 0 0 1 12 0v3"/></symbol>
+
+  <!-- 유틸 4 -->
+  <symbol id="i-user-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="8" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7Z"/></symbol>
+</svg>
+
+<!-- SPEC §1 — 항상 보이는 데모 표식. 약사 검수 전에는 제거하지 않는다. -->
+<div class="demo-strip" role="note">
+  <svg aria-hidden="true"><use href="#i-alert-triangle"/></svg>
+  프로토타입 — 검수 전 데모입니다. 실제 복약 판단에 쓰지 마세요.
+</div>
+
+<main class="app" id="app"></main>
+<div id="sheet-root"></div>
+<div id="toast" class="wf-toast" hidden></div>
+
+<script>
+"use strict";
+(function () {
+
+/* ==========================================================================
+   1. 입력 카탈로그 (SPEC §3)
+   ========================================================================== */
+/* 3040 변형 — 영양제가 먼저 나오므로 SUPP_LIST 를 먼저 두고 싶지만, analyze()·
+   buildSchedule() 등 아래 코드가 "처방약 다음 건기식" 순서를 가정하지 않고
+   id 로만 대조하므로 선언 순서 자체는 상관없다. 화면 순서는 §2. 화면 조각의
+   RENDERERS/ACTIONS 쪽에서 바뀐다. */
+const RX_LIST = [
+  { id: 'pill',     name: '피임약' },
+  { id: 'psy',      name: '항우울제·수면제' },
+  { id: 'gi',       name: '위장약' },
+  { id: 'allergy',  name: '알레르기약' },
+  { id: 'acne',     name: '여드름약(이소트레티노인)' },
+  { id: 'thy',      name: '갑상선약' },
+  { id: 'chol',     name: '고지혈증약' },
+  { id: 'hairloss', name: '탈모약' },
+  { id: 'pain',     name: '통증·소염제' },
+  { id: 'bp',       name: '혈압약' },
+  { id: 'none',     name: '없어요' }
+];
+
+/* v2 — 이모지 필드를 없앴다. 이모지는 렌더 색을 통제할 수 없어(일부 계열이
+   초록으로 그려진다) 「초록 = 문제 없음」 오독의 유입 경로가 된다. 타일은 텍스트만. */
+const SUPP_LIST = [
+  { id: 'omega3',  name: '오메가3' },
+  { id: 'vitd',    name: '비타민D' },
+  { id: 'mag',     name: '마그네슘' },
+  { id: 'probio',  name: '유산균' },
+  { id: 'multi',   name: '종합비타민' },
+  { id: 'milk',    name: '밀크씨슬' },
+  { id: 'lutein',  name: '루테인' },
+  { id: 'collagen',name: '콜라겐' },
+  { id: 'zinc',    name: '아연' },
+  { id: 'iron',    name: '철분' },
+  { id: 'redgin',  name: '홍삼' },
+  { id: 'protein', name: '단백질보충제' }
+];
+
+const AGE_LIST = [
+  { id: '20', name: '20대' },
+  { id: '30', name: '30대' },
+  { id: '40', name: '40대' },
+  { id: '50', name: '50대' },
+  { id: '60', name: '60대 이상' }
+];
+
+const COND_LIST = [
+  { id: 'preg',   name: '임신·수유 중' },
+  { id: 'kidney', name: '신장 질환' },
+  { id: 'liver',  name: '간 질환' },
+  { id: 'none',   name: '해당 없음' }
+];
+
+/* 가족 관계는 고정 4종. 자유 입력 이름을 받지 않는다 — 이름은 개인정보이고,
+   자유 문자열은 localStorage 오염 표면을 만든다.
+   색을 붙이지 않는다 — 색은 심각도 전용 채널이라, 관계에 색을 주면
+   「파란 아버지는 괜찮은가」로 읽힌다. */
+const REL_LIST = [
+  { id: 'mother', label: '어머니' },
+  { id: 'father', label: '아버지' },
+  { id: 'spouse', label: '배우자' },
+  { id: 'other',  label: '그 외 가족' }
+];
+
+/* 복용 시간대 (SPEC §5) */
+const SLOTS = [
+  { id: 'morningEmpty', label: '아침 공복', time: '오전 7:00' },
+  { id: 'morning',      label: '아침 식후', time: '오전 8:00' },
+  { id: 'lunch',        label: '점심 식후', time: '오후 12:30' },
+  { id: 'evening',      label: '저녁 식후', time: '오후 7:00' },
+  { id: 'night',        label: '자기 전',   time: '오후 10:00' }
+];
+
+/* ==========================================================================
+   ⚠ 검수 전 — 약사 검수 필요.
+   기전(MECHANISM) 레이어 — 2026-08-16 회의록 §6 핵심결정 4 / §7 분석 흐름.
+   "조합 전체를 저장하지 않고 성분·위험 기전·규칙 중심으로 설계한다."
+   이 블록의 성분 배정·기전 태그·근거 수준은 전부 예시 데이터다.
+   ========================================================================== */
+const MECH_FAMILIES = [
+  { id:'absorb', label:'흡수',      sub:'얼마나 몸에 들어가는가', icon:'i-mech-absorb' },
+  { id:'meta',   label:'대사·축적', sub:'몸이 어떻게 처리하는가', icon:'i-mech-meta'   },
+  { id:'add',    label:'작용 중첩', sub:'같은 방향으로 겹치는가', icon:'i-mech-add'    },
+  { id:'state',  label:'몸 상태',   sub:'같은 용량도 달라지는가', icon:'i-mech-state'  }
+];
+
+/* derive: 'pair'  = source 역할 하나 + target 역할 하나가 있어야 도출
+          'stack' = 같은 기전을 가진 서로 다른 **항목** 2개 이상이면 도출
+          'none'  = 자동 도출 안 함. 표시·설명 전용
+   level: 자동 도출 시 부여할 등급. warn 은 절대 쓰지 않는다 (P3). */
+const MECHANISMS = [
+{ id:'chelate', fam:'absorb', derive:'pair', level:'time', remedy:'spacing',
+  plain:'서로 달라붙어 흡수를 막는 작용', term:'킬레이트 결합',
+  detail:'철·마그네슘·칼슘·아연 같은 금속 성분은 어떤 약과 위장에서 결합해 덩어리를 만듭니다. 결합한 약은 흡수되지 못하고 그대로 지나갑니다. 위장에서 서로 만나지 않게 시간을 띄우면 대부분 해소됩니다.' },
+{ id:'gastricph', fam:'absorb', derive:'pair', level:'time', remedy:'spacing',
+  plain:'위산 정도를 바꿔 흡수를 바꾸는 작용', term:'위 내 pH 변화',
+  detail:'어떤 성분은 위가 산성일 때 잘 녹아 흡수됩니다. 위산을 줄이는 약을 함께 드시면 그 성분이 덜 녹아 흡수량이 떨어질 수 있습니다.' },
+{ id:'cyp', fam:'meta', derive:'pair', level:'check', remedy:'consult',
+  plain:'간에서 같은 분해 경로를 두고 겹치는 작용', term:'간 대사효소(CYP450) 경쟁',
+  detail:'약과 일부 식물 성분은 간의 같은 효소로 분해됩니다. 한쪽이 그 효소를 붙들면 다른 쪽이 평소보다 천천히 분해되어 몸에 남는 양이 달라질 수 있습니다. 이 효소의 활성은 사람마다 유전적으로 차이가 큽니다.' },
+{ id:'fatload', fam:'meta', derive:'stack', level:'check', remedy:'consult', minItems:2,
+  plain:'기름에 녹아 몸에 쌓이는 성분', term:'지용성 축적 (비타민 A·D·E·K)',
+  detail:'물에 녹는 성분은 남으면 소변으로 빠져나가지만, 기름에 녹는 성분은 간과 지방에 남습니다. 같은 계열을 여러 제품에서 함께 드시면 합계가 생각보다 커질 수 있습니다.' },
+{ id:'deplete', fam:'meta', derive:'none',
+  plain:'약이 특정 영양소를 깎는 작용', term:'약물 유발 영양소 결핍',
+  detail:'일부 약은 오래 드시면 특정 비타민·미네랄이 평소보다 빨리 소모된다는 보고가 있습니다.' },
+{ id:'bleed', fam:'add', derive:'stack', level:'check', remedy:'monitor', minItems:2, dir:true,
+  plain:'피가 굳는 것을 늦추는 작용', term:'항혈소판·항응고 경향',
+  detail:'피가 굳으려면 혈소판이 뭉치고 응고 인자가 작동해야 합니다. 이 중 어느 단계든 늦추는 성분이 여러 개 겹치면 멍이 잘 들거나 지혈이 늦어질 수 있습니다.' },
+{ id:'sedation', fam:'add', derive:'stack', level:'check', remedy:'monitor', minItems:2, dir:true,
+  plain:'졸리게 하거나 반대로 깨우는 작용', term:'중추신경 억제·각성',
+  detail:'뇌의 각성 정도를 낮추는 성분이 겹치면 졸음·어지럼이 더 커집니다. 반대로 각성 쪽으로 작용하는 성분이 함께 있으면 서로 간섭해 잠들기 어려워질 수 있습니다.' },
+{ id:'gimucosa', fam:'add', derive:'stack', level:'check', remedy:'monitor', minItems:2,
+  plain:'위 점막을 자극하는 작용', term:'위장관 점막 자극',
+  detail:'위 표면을 덮는 보호층을 얇게 만들거나 점막을 직접 자극하는 성분입니다. 겹치면 속쓰림이 생기기 쉽습니다.' },
+{ id:'cardio', fam:'add', derive:'pair', level:'check', remedy:'monitor',
+  plain:'혈압·심박에 영향을 주는 작용', term:'혈압·심박수 변화',
+  detail:'혈관을 조이거나 늘리고 심장 박동수를 바꾸는 성분입니다. 혈압을 조절하는 약과 함께 있으면 조절 폭이 달라질 수 있습니다.' },
+{ id:'teratogen', fam:'state', derive:'none',
+  plain:'임신 중 태아에 영향을 줄 수 있는 성분', term:'최기형성 위험',
+  detail:'태아의 기관이 만들어지는 시기에 노출되면 발달에 영향을 준다고 알려진 성분입니다.' },
+{ id:'organfx', fam:'state', derive:'none',
+  plain:'간·신장 기능에 따라 세기가 달라지는 성분', term:'배설·대사 능력 의존',
+  detail:'대부분의 성분은 간에서 분해되고 신장으로 빠져나갑니다. 이 기능이 떨어져 있으면 같은 용량도 몸에 더 오래, 더 진하게 남습니다.' }
+];
+
+/* 근거 수준 — 위험 등급과 **독립된 축**이다. 색을 쓰지 않는다(모노크롬 3칸 막대). */
+const EVIDENCE = {
+  established:{ rank:3, label:'확립',   bars:3, desc:'여러 자료에서 반복 확인된 상호작용입니다.' },
+  limited:    { rank:2, label:'제한적', bars:2, desc:'보고는 있으나 자료마다 결과가 갈립니다.' },
+  theoretical:{ rank:1, label:'이론적', bars:1, desc:'성분의 작용 특성상 예상되는 것으로, 실제 사례 보고는 적습니다.' }
+};
+
+/* 자동 도출 카드의 「어떻게 하나요」 — 기전의 remedy 로 고른다 */
+const REMEDY = {
+  spacing:'드시는 시간을 2시간 이상 띄워 보시고, 정확한 간격은 약국에 한 번 확인해 주세요.',
+  consult:'다음 진료나 약국에 가실 때 이 조합을 한 번 여쭤보세요.',
+  monitor:'평소와 다른 변화가 있으면 진료 때 알려 주세요.'
+};
+
+/* 성분 ↔ 기전 간선. role 은 derive:'pair' 기전에서만, dir 은 dir:true 기전에서만.
+   ⚠ 검수 전 — 약사 검수 필요 */
+const INGREDIENTS = [
+ { id:'ethinylest', name:'에티닐에스트라디올', mechs:[{m:'cyp',role:'target',ev:'established'},{m:'deplete',ev:'limited'}] },
+ { id:'progestin',  name:'프로게스틴',        mechs:[{m:'cyp',role:'target',ev:'limited'}] },
+ { id:'ssri',       name:'세로토닌 재흡수 억제 성분', mechs:[{m:'bleed',dir:1,ev:'established'},{m:'gimucosa',ev:'limited'},{m:'sedation',dir:1,ev:'limited'},{m:'cyp',role:'source',ev:'established'},{m:'organfx',ev:'limited'}] },
+ { id:'hypnotic',   name:'수면유도 성분',      mechs:[{m:'sedation',dir:1,ev:'established'},{m:'cyp',role:'target',ev:'limited'}] },
+ { id:'ppi',        name:'위산분비 억제 성분', mechs:[{m:'gastricph',role:'source',ev:'established'},{m:'cyp',role:'source',ev:'limited'}] },
+ { id:'antacid',    name:'제산 성분',          mechs:[{m:'gastricph',role:'source',ev:'established'},{m:'chelate',role:'source',ev:'established'}] },
+ { id:'antihist',   name:'항히스타민 성분',    mechs:[{m:'sedation',dir:1,ev:'established'}] },
+ { id:'isotret',    name:'이소트레티노인',     mechs:[{m:'fatload',ev:'established'},{m:'teratogen',ev:'established'},{m:'organfx',ev:'established'}] },
+ { id:'levothy',    name:'레보티록신',         mechs:[{m:'chelate',role:'target',ev:'established'},{m:'gastricph',role:'target',ev:'established'}] },
+ { id:'statin',     name:'스타틴 성분',        mechs:[{m:'cyp',role:'target',ev:'established'},{m:'organfx',ev:'established'}] },
+ { id:'fin5ar',     name:'5α-환원효소 억제 성분', mechs:[{m:'teratogen',ev:'established'}] },
+ { id:'nsaid',      name:'소염진통 성분',      mechs:[{m:'bleed',dir:1,ev:'established'},{m:'gimucosa',ev:'established'},{m:'organfx',ev:'established'},{m:'cardio',role:'source',ev:'limited'}] },
+ { id:'antihtn',    name:'혈압강하 성분',      mechs:[{m:'cardio',role:'target',ev:'established'},{m:'organfx',ev:'limited'}] },
+ { id:'epa_dha',    name:'EPA·DHA',            mechs:[{m:'bleed',dir:1,ev:'limited'}] },
+ { id:'vit_d',      name:'비타민D',            mechs:[{m:'fatload',ev:'limited'}] },
+ { id:'vit_a',      name:'비타민A(레티놀)',    mechs:[{m:'fatload',ev:'established'},{m:'teratogen',ev:'limited'}] },
+ { id:'vit_k',      name:'비타민K',            mechs:[{m:'fatload',ev:'theoretical'},{m:'bleed',dir:-1,ev:'established'}] },
+ { id:'calcium',    name:'칼슘',               mechs:[{m:'chelate',role:'source',ev:'established'}] },
+ { id:'magnesium',  name:'마그네슘',           mechs:[{m:'chelate',role:'source',ev:'established'},{m:'organfx',ev:'established'}] },
+ { id:'iron_salt',  name:'철분염',             mechs:[{m:'chelate',role:'source',ev:'established'},{m:'gastricph',role:'target',ev:'established'},{m:'gimucosa',ev:'limited'}] },
+ { id:'zinc_min',   name:'아연',               mechs:[{m:'chelate',role:'source',ev:'limited'}] },
+ { id:'folate_b',   name:'엽산·비타민B군',     mechs:[] },
+ { id:'probiotic',  name:'유산균 균주',        mechs:[] },
+ { id:'silymarin',  name:'실리마린',           mechs:[{m:'cyp',role:'source',ev:'limited'},{m:'organfx',ev:'theoretical'}] },
+ { id:'lutein_zea', name:'루테인·지아잔틴',    mechs:[{m:'fatload',ev:'theoretical'}] },
+ { id:'collagen_pep',name:'콜라겐 펩타이드',   mechs:[] },
+ { id:'ginsenoside',name:'진세노사이드',       mechs:[{m:'bleed',dir:1,ev:'theoretical'},{m:'sedation',dir:-1,ev:'limited'},{m:'cardio',role:'source',ev:'limited'},{m:'cyp',role:'source',ev:'theoretical'}] },
+ { id:'protein_aa', name:'단백질·아미노산',    mechs:[{m:'organfx',ev:'limited'}] }
+];
+
+/* 제품 id → 성분. RX_LIST·SUPP_LIST 의 'none' 을 뺀 22개 id가 전부 여기 있어야 한다.
+   ⚠ 카탈로그가 분류 단위 한 칩이라 실제로 동시에 먹지 않는 대표 성분을 함께 묶었다
+     (gi = ppi + antacid, psy = ssri + hypnotic). 검수 때 칩을 쪼개야 한다. */
+const COMPOSITION = {
+  pill:['ethinylest','progestin'], psy:['ssri','hypnotic'], gi:['ppi','antacid'],
+  allergy:['antihist'], acne:['isotret'], thy:['levothy'], chol:['statin'],
+  hairloss:['fin5ar'], pain:['nsaid'], bp:['antihtn'],
+  omega3:['epa_dha'], vitd:['vit_d'], mag:['magnesium'], probio:['probiotic'],
+  multi:['vit_a','vit_d','vit_k','calcium','iron_salt','folate_b','zinc_min'],
+  milk:['silymarin'], lutein:['lutein_zea'], collagen:['collagen_pep'],
+  zinc:['zinc_min'], iron:['iron_salt'], redgin:['ginsenoside'], protein:['protein_aa']
+};
+
+/* ---- 기전 엔진 — 선택 항목을 성분으로 펼쳐 기전별로 모은다 ---- */
+function mechProfile(rxIds, suppIds) {
+  const prof = {};
+  rxIds.concat(suppIds).forEach(function (item) {
+    (COMPOSITION[item] || []).forEach(function (ingId) {
+      const ing = INGREDIENTS.filter(function (o) { return o.id === ingId; })[0];
+      if (!ing) return;
+      ing.mechs.forEach(function (e) {
+        (prof[e.m] = prof[e.m] || []).push(
+          { item: item, ing: ingId, ev: e.ev, role: e.role || null, dir: e.dir || 0 });
+      });
+    });
+  });
+  return prof;
+}
+
+/* 같은 item 은 하나로 접는다. 접을 때 근거가 가장 강한 간선을 남긴다.
+   ⚠ 같은 item 안의 성분끼리는 절대 스택시키지 않는다 — 종합비타민 한 알 안의
+     비타민A+D 는 이미 배합된 제품이라 「겹침」이 아니다. */
+function uniqItems(entries) {
+  const by = {};
+  entries.forEach(function (e) {
+    const cur = by[e.item];
+    if (!cur || EVIDENCE[e.ev].rank > EVIDENCE[cur.ev].rank) by[e.item] = e;
+  });
+  return Object.keys(by).map(function (k) { return by[k]; });
+}
+
+function mechOf(id) { return MECHANISMS.filter(function (M) { return M.id === id; })[0]; }
+function ingName(id) { const o = INGREDIENTS.filter(function (x) { return x.id === id; })[0]; return o ? o.name : id; }
+function minEv(entries) {
+  return entries.reduce(function (a, e) {
+    return EVIDENCE[e.ev].rank < EVIDENCE[a].rank ? e.ev : a; }, 'established');
+}
+function keyOf(ids) { return ids.slice().sort().join('|'); }
+
+/* 조사 문제를 피하려고 「…에서 {plain}이 …」 형태로 고정한다.
+   MECHANISMS.plain 은 전부 「작용」 또는 「성분」으로 끝나므로 '이' 가 항상 맞다. */
+function mkDerived(M, entries, mode) {
+  const items = entries.map(function (e) { return e.item; })
+                       .filter(function (v, i, a) { return a.indexOf(v) === i; });
+  const names = items.map(itemLabel);
+  const ev = minEv(entries);
+  const what = (mode === 'oppose')
+    ? '<b>' + names.join('</b> · <b>') + '</b>에서 ' + M.plain +
+      '이 서로 <b>반대 방향</b>으로 확인됩니다. 한쪽이 다른 쪽을 상쇄하거나 간섭할 수 있습니다.'
+    : '고르신 것 가운데 <b>' + names.join('</b> · <b>') + '</b>에서 ' + M.plain + '이 함께 확인됩니다.';
+  return {
+    level: M.level, pair: names, what: what, how: REMEDY[M.remedy],
+    mech: [M.id], ev: ev, via: entries.map(function (e) { return e.ing; }),
+    itemIds: items, derived: true
+  };
+}
+
+function derive(prof) {
+  const out = [];
+  MECHANISMS.forEach(function (M) {
+    const es = prof[M.id]; if (!es || M.derive === 'none') return;
+    if (M.derive === 'pair') {
+      const src = es.filter(function (e) { return e.role === 'source'; });
+      const tgt = es.filter(function (e) { return e.role === 'target'; });
+      src.forEach(function (a) { tgt.forEach(function (b) {
+        if (a.item === b.item) return;
+        out.push(mkDerived(M, [a, b], 'pair'));
+      }); });
+    } else {                                   /* stack */
+      if (M.dir) {
+        const plus  = uniqItems(es.filter(function (e) { return e.dir > 0; }));
+        const minus = uniqItems(es.filter(function (e) { return e.dir < 0; }));
+        if (plus.length >= (M.minItems || 2)) out.push(mkDerived(M, plus, 'stack'));
+        if (plus.length >= 1 && minus.length >= 1) out.push(mkDerived(M, plus.concat(minus), 'oppose'));
+      } else {
+        const u = uniqItems(es);
+        if (u.length >= (M.minItems || 2)) out.push(mkDerived(M, u, 'stack'));
+      }
+    }
+  });
+  return out;
+}
+
+/* 분석 화면·메서드 블록이 쓰는 카운터 */
+function ingredientCount() {
+  const s = {};
+  realRx().concat(state.supps).forEach(function (it) {
+    (COMPOSITION[it] || []).forEach(function (g) { s[g] = 1; }); });
+  return Object.keys(s).length;
+}
+function mechCount() { return Object.keys(mechProfile(realRx(), state.supps)).length; }
+function ruleCount() { return RULES.length + RX_PAIR_RULES.length + INFO_RULES.length; }
+
+
+/* ==========================================================================
+   ⚠ 검수 전 — 약사 검수 필요. 이 블록 전체가 3040 변형을 위해 새로 쓴 예시
+   데이터다 (원본 index.html 의 처방약·건기식 조합과 다르다 — 카탈로그를
+   피임약/항우울제/여드름약/탈모약 등으로 바꾸면서 상호작용 지식도 전부
+   다시 짰다). 약사 검수 없이 실제 서비스에 내보내면 안 된다.
+   --------------------------------------------------------------------------
+   상호작용 판정에 쓰이는 지식은 전부 이 블록 안에만 있다. 화면 코드에는
+   조합에 대한 if 문이 하나도 없다. 검수 뒤에는 아래 5개 상수만 통째로 갈아
+   끼우면 되고, 렌더링·시간표·집계 코드는 손대지 않는다.
+
+   등급: warn(주의·빨강) / time(시간 조정·주황) / check(확인 권장·파랑) / info(알아두기·회색)
+   time 규칙은 suppSlot(건기식을 옮길 시간대)과 why(시간표에 붙일 주황 한 줄)를 함께 갖는다.
+   ========================================================================== */
+
+/* SPEC §5 기본 배치 — RX_LIST·SUPP_LIST 의 'none' 을 뺀 모든 id가 여기 하나씩
+   있어야 한다. 빠지면 그 항목을 고른 사람의 분석에서 buildSchedule() 이 죽는다. */
+const DEFAULT_SLOT = {
+  thy: 'morningEmpty', probio: 'morningEmpty',
+  bp: 'morning', gi: 'morning', pain: 'morning', pill: 'morning', allergy: 'morning',
+  redgin: 'morning', zinc: 'morning',
+  chol: 'evening', hairloss: 'evening', acne: 'evening', psy: 'night',
+  omega3: 'evening', multi: 'evening', vitd: 'evening', lutein: 'evening', milk: 'evening',
+  mag: 'lunch', iron: 'lunch', protein: 'lunch',
+  collagen: 'night'
+};
+
+/* 처방약 × 건기식 — 검수 전 — 약사 검수 필요 */
+const RULES = [
+  /* 주의 (warn) — 이소트레티노인은 비타민A 유도체라, 비타민A 과잉 위험이
+     그 자체로 잘 알려진 조합이다. 다른 조합처럼 근거가 갈리지 않는다. */
+  { rx: 'acne', supp: 'multi', level: 'warn',
+    mech: ['fatload'], ev: 'established', via: ['isotret', 'vit_a'],
+    what: '이소트레티노인은 <b>비타민A 유도체</b>입니다. 종합비타민에 든 비타민A가 더해지면 두통·눈 건조·간수치 상승 같은 <b>비타민A 과잉 증상</b> 위험이 커질 수 있어요.',
+    how:  '<b>스스로 판단하지 마세요.</b> 처방받은 병원(피부과)에 비타민A가 든 영양제를 같이 먹고 있다고 꼭 말씀해 주세요.' },
+
+  /* 시간 조정 (time) — 흡수 방해는 성분(철분·마그네슘 등) 문제라 카탈로그가
+     바뀌어도 갑상선약·위장약 축은 그대로 유효하다 */
+  { rx: 'thy', supp: 'iron', level: 'time', suppSlot: 'lunch', why: '갑상선약과 4시간 이상 띄우기',
+    mech: ['chelate'], ev: 'established', via: ['iron_salt', 'levothy'],
+    what: '철분이 갑상선약의 <b>흡수를 방해</b>합니다.',
+    how:  '<b>시간만 띄우면 해결됩니다.</b> 갑상선약을 드시고 최소 4시간 뒤에 철분을 드세요.' },
+  { rx: 'thy', supp: 'mag', level: 'time', suppSlot: 'lunch', why: '갑상선약과 4시간 이상 띄우기',
+    mech: ['chelate'], ev: 'established', via: ['magnesium', 'levothy'],
+    what: '마그네슘이 갑상선약의 <b>흡수를 방해</b>합니다. 같은 시간에 드시면 약효가 떨어질 수 있어요.',
+    how:  '<b>시간만 띄우면 해결됩니다.</b> 갑상선약은 아침 공복에, 마그네슘은 최소 4시간 뒤에 드세요.' },
+  { rx: 'thy', supp: 'multi', level: 'time', suppSlot: 'lunch', why: '갑상선약과 4시간 이상 띄우기',
+    mech: ['chelate'], ev: 'established', via: ['calcium', 'iron_salt', 'levothy'],
+    what: '종합비타민에 든 칼슘·철분이 갑상선약의 <b>흡수를 방해</b>할 수 있습니다.',
+    how:  '<b>시간만 띄우면 해결됩니다.</b> 갑상선약과 최소 4시간 간격을 두세요.' },
+  { rx: 'gi', supp: 'iron', level: 'time', suppSlot: 'lunch', why: '위장약과 2시간 이상 띄우기',
+    mech: ['gastricph'], ev: 'established', via: ['ppi', 'iron_salt'],
+    what: '위산을 줄이는 약은 철분 <b>흡수를 떨어뜨립니다.</b>',
+    how:  '위장약과 2시간 이상 간격을 두고 철분을 드세요.' },
+  { rx: 'gi', supp: 'mag', level: 'time', suppSlot: 'lunch', why: '위장약과 2시간 이상 띄우기',
+    mech: ['chelate'], ev: 'limited', via: ['antacid', 'magnesium'],
+    what: '제산 성분과 마그네슘이 서로 <b>흡수를 방해</b>할 수 있습니다.',
+    how:  '위장약과 2시간 이상 간격을 두세요.' },
+
+  /* 확인 권장 (check) — 근거가 제한적인 것 */
+  { rx: 'chol', supp: 'milk', level: 'check',
+    mech: ['cyp'], ev: 'limited', via: ['silymarin', 'statin'],
+    what: '둘 다 간에서 <b>같은 경로로 분해</b>됩니다. 관련 보고가 있지만 근거는 아직 제한적이에요.',
+    how:  '다음 진료나 약국에 가실 때 한 번 여쭤보시면 좋습니다.' },
+  { rx: 'bp', supp: 'redgin', level: 'check',
+    mech: ['cardio'], ev: 'limited', via: ['ginsenoside', 'antihtn'],
+    what: '홍삼이 <b>혈압에 영향</b>을 준다는 보고가 있습니다.',
+    how:  '혈압을 평소보다 자주 재 보시고, 변화가 있으면 알리세요.' },
+  { rx: 'psy', supp: 'redgin', level: 'check',
+    mech: ['sedation'], ev: 'limited', via: ['ginsenoside', 'ssri', 'hypnotic'],
+    what: '홍삼이 수면·각성에 영향을 준다는 보고가 있습니다.',
+    how:  '잠드는 데 변화가 있으면 진료 때 알려 주세요.' },
+  { rx: 'pain', supp: 'omega3', level: 'check',
+    mech: ['bleed'], ev: 'limited', via: ['nsaid', 'epa_dha'],
+    what: '소염진통제와 오메가3 모두 <b>출혈 경향</b>을 조금 높일 수 있습니다.',
+    how:  '멍이 늘거나 속쓰림이 있으면 진료 때 알려 주세요.' },
+  { rx: 'pill', supp: 'milk', level: 'check',
+    mech: ['cyp'], ev: 'limited', via: ['silymarin', 'ethinylest'],
+    what: '밀크씨슬과 피임약 모두 간에서 <b>같은 경로로 대사</b>될 수 있습니다. 근거는 아직 제한적이에요.',
+    how:  '다음 진료나 약국에 가실 때 한 번 여쭤보시면 좋습니다.' }
+];
+
+/* 처방약끼리. 등급은 check 고정이며 절대 warn 으로 올리지 않는다.
+   이미 처방 단계에서 DUR을 통과한 조합이라, 강하게 경고하면 앱이 의사 처방을
+   사후 부정하는 화면이 된다. (README §P3) — 검수 전 — 약사 검수 필요 */
+const RX_PAIR_RULES = [
+  { a: 'psy', b: 'pain', level: 'check',
+    mech: ['bleed', 'gimucosa'], ev: 'established', via: ['ssri', 'nsaid'],
+    what: '둘 다 위장에 부담을 주고 출혈 경향을 높일 수 있는 조합입니다.',
+    how:  '<b>의사가 알고 처방했을 수 있습니다.</b> 다음 진료 때 한 번 확인해 보세요.' },
+  { a: 'thy', b: 'gi', level: 'check',
+    mech: ['gastricph'], ev: 'established', via: ['ppi', 'levothy'],
+    what: '위장약이 갑상선약의 흡수에 영향을 줄 수 있습니다.',
+    how:  '<b>의사가 알고 처방했을 수 있습니다.</b> 다음 진료 때 확인해 보세요.' },
+  { a: 'allergy', b: 'psy', level: 'check',
+    mech: ['sedation'], ev: 'established', via: ['antihist', 'ssri', 'hypnotic'],
+    what: '둘 다 <b>졸음을 유발</b>할 수 있는 조합입니다. 함께 드시면 졸음이 더 심해질 수 있어요.',
+    how:  '<b>의사가 알고 처방했을 수 있습니다.</b> 운전이나 기계 조작 전에는 특히 주의해 주세요.' }
+];
+
+/* 단독 알아두기. when 의 조건이 모두 참일 때만 뜬다.
+   rx/supps/conds = 모두 포함되어야 함, rxNot = 하나도 없어야 함, condsAny = 하나 이상.
+   level 을 지정하지 않으면 info(회색). 임신 관련 두 건은 근거가 이미 확립된
+   금기라 info 가 아니라 warn 으로 올렸다 — 검수 전 — 약사 검수 필요 */
+const INFO_RULES = [
+  { id: 'multi-k', when: { supps: ['multi'] }, pair: ['종합비타민'],
+    mech: ['bleed'], ev: 'theoretical', via: ['vit_k'],
+    /* 원본 index.html 에는 rxNot:['anti'] 가드가 있었으나 3040 계열에서 사라졌고
+       v2 RX_LIST 에는 항응고제 항목 자체가 없다. 즉 와파린 복용자는 「직접 입력」으로만
+       등록되는데 customs 는 분석 대상이 아니다. 따라서 이 문구는 사용자의 실제 약을
+       확인하지 못한 상태에서 「지금 드시는 약과는 문제가 없다」를 단정하게 된다.
+       확인 범위를 한정하는 문장으로 바꾼다. — 검수 전 — 약사 검수 필요 */
+    what: '종합비타민에는 <b>비타민K</b>가 들어 있는 경우가 많습니다. 비타민K는 <b>와파린 같은 항응고제</b>의 작용을 약하게 만들 수 있어, 두 가지를 함께 드시는지가 중요한 항목이에요.',
+    how:  '항응고제를 드시고 있거나 앞으로 처방받게 되면, <b>종합비타민을 먹고 있다는 사실을 반드시 알리세요.</b>' },
+  { id: 'pill-b', when: { rx: ['pill'], supps: ['multi'] }, pair: ['피임약', '종합비타민'],
+    mech: ['deplete'], ev: 'limited', via: ['ethinylest', 'folate_b'],
+    what: '피임약을 오래 드시면 <b>엽산·비타민B군</b>이 부족해질 수 있다는 보고가 있습니다. 종합비타민이 도움이 될 수 있어요.',
+    how:  '피로감이 심하면 진료 때 여쭤보세요.' },
+  { id: 'preg', when: { conds: ['preg'] }, pair: ['임신·수유 중'],
+    what: '임신·수유 중에는 영양제도 <b>성분과 용량</b>을 따로 확인해야 합니다.',
+    how:  '드시는 제품을 산부인과나 약국에 보여 주세요.' },
+  { id: 'organ', when: { condsAny: ['kidney', 'liver'] }, pair: ['신장·간 기능'],
+    what: '신장·간 기능이 떨어져 있으면 <b>같은 용량도 다르게 작용</b>할 수 있습니다.',
+    how:  '드시는 영양제 목록을 진료 때 그대로 보여 주세요.' },
+  { id: 'acne-preg', level: 'warn', when: { rx: ['acne'], conds: ['preg'] }, pair: ['여드름약(이소트레티노인)', '임신·수유 중'],
+    mech: ['teratogen'], ev: 'established', via: ['isotret'],
+    what: '이소트레티노인은 <b>임신 중 태아에 미치는 영향이 크다고 알려진 성분</b>입니다. 임신 계획이나 가능성이 있다면 반드시 처방 의사에게 먼저 확인하셔야 해요.',
+    how:  '<b>스스로 판단하지 마세요.</b> 처방받은 병원(피부과)에 임신·수유 여부를 바로 알려 주세요.' },
+  { id: 'hair-preg', level: 'warn', when: { rx: ['hairloss'], conds: ['preg'] }, pair: ['탈모약', '임신·수유 중'],
+    mech: ['teratogen'], ev: 'established', via: ['fin5ar'],
+    what: '탈모약 성분 중 일부는 <b>임신 중 태아에 영향을 줄 수 있다고 알려져 있어</b> 각별한 주의가 필요합니다.',
+    how:  '<b>스스로 판단하지 마세요.</b> 처방받은 병원에 임신·수유 여부나 임신 계획을 알려 주세요.' }
+];
+
+/* 이름 검색용 목록. 고르면 오른쪽 처방약 분류가 선택된다. 실제 제품명이되
+   카탈로그(RX_LIST)에 맞춰 새로 골랐다 — 검수 전 — 약사 검수 필요 */
+const DRUG_SEARCH = [
+  { name: '머시론정',                 rx: 'pill' },
+  { name: '야스민정',                 rx: 'pill' },
+  { name: '졸로프트정 50mg',          rx: 'psy' },
+  { name: '스틸녹스정 10mg',          rx: 'psy' },
+  { name: '넥시움정 20mg',            rx: 'gi' },
+  { name: '란스톤엘에프디티정 30mg',  rx: 'gi' },
+  { name: '지르텍정 10mg',            rx: 'allergy' },
+  { name: '클라리틴정',               rx: 'allergy' },
+  { name: '로아큐탄연질캡슐 10mg',    rx: 'acne' },
+  { name: '이소티논연질캡슐 10mg',    rx: 'acne' },
+  { name: '씬지로이드정 0.1mg',       rx: 'thy' },
+  { name: '신지로이드정 0.05mg',      rx: 'thy' },
+  { name: '크레스토정 10mg',          rx: 'chol' },
+  { name: '리피토정 20mg',            rx: 'chol' },
+  { name: '프로페시아정 1mg',         rx: 'hairloss' },
+  { name: '아보다트연질캡슐 0.5mg',   rx: 'hairloss' },
+  { name: '쎄레브렉스캡슐 200mg',     rx: 'pain' },
+  { name: '이지엔6프로연질캡슐',      rx: 'pain' },
+  { name: '아모잘탄정 5/50mg',        rx: 'bp' },
+  { name: '노바스크정 5mg',           rx: 'bp' }
+];
+
+/* 약봉투 사진의 "예시 인식 결과". 실제 OCR이 아니다.
+   셋 중 하나는 일부러 흐리게 읽힌 것으로 둔다. */
+const OCR_DEMO = [
+  { name: '지르텍정 10mg',     rx: 'allergy', sure: true,  note: '잘 읽혔어요' },
+  { name: '크레스토정 10mg',   rx: 'chol',    sure: true,  note: '잘 읽혔어요' },
+  { name: '씬지로0드정 0.1mg', rx: 'thy',     sure: false, note: '글자가 흐려서 확실하지 않아요' }
+];
+
+/* ========================= 규칙 데이터 블록 끝 ========================= */
+
+
+/* 등급별 표시 규약 (README §4.1) */
+const LEVELS = {
+  warn:  { cls: 'lv1', label: '주의',      icon: 'i-alert-triangle', doIcon: 'i-message' },
+  time:  { cls: 'lv2', label: '시간 조정',  icon: 'i-clock',          doIcon: 'i-check-circle' },
+  check: { cls: 'lv3', label: '확인 권장',  icon: 'i-alert-circle',   doIcon: 'i-message' },
+  info:  { cls: 'lv4', label: '알아두기',   icon: 'i-file-text',      doIcon: 'i-file-text' }
+};
+
+const DISCLAIMER =
+  '<b>이 결과는 진단이 아닙니다.</b> 복용량과 복용 시점, 기저질환은 반영하지 않았습니다. ' +
+  '약을 바꾸거나 끊는 판단은 반드시 의사·약사와 상의해 주세요. ' +
+  '이 프로토타입의 상호작용 정보는 <b>검수 전 예시 데이터</b>입니다.';
+
+
+/* ==========================================================================
+   2. 상태 — 화면 하나에 상태 기계 하나
+   ========================================================================== */
+const state = {
+  screen: 'landing',   // landing supp rx search cam ocr analyzing report family
+  sheet: null,         // null | 'custom' | 'consent' | 'invite'
+  rx: [],              // 처방약 id (없어요 = 'none' 포함 가능)
+  supps: [],           // 건기식 id
+  customs: [],         // 직접 입력 문자열 — 분석 대상 아님
+  age: null,
+  conds: [],
+  q: '',               // 검색어
+  ocrPick: OCR_DEMO.map(function (o) { return o.sure; }), // 흐리게 읽힌 항목은 기본 제외
+  step: 0,             // 분석 중 진행 줄
+  appNotice: false,
+  copyFallback: '',
+
+  /* ---- v2 가족 ---- */
+  members:   [],       // [{id, rel, label, supps, rx, age, conds, customs, savedAt}]
+  activeId:  null,     // null = 「나」(저장하지 않는다). 그 외 = members[].id
+  invite:    null,     // {target:'parent'|'peer'|'ack', msgId, text}
+  storeOk:   true,
+  storeAck:  false,
+  fromInvite:false,
+  bigText:   false
+};
+
+const app = document.getElementById('app');
+const sheetRoot = document.getElementById('sheet-root');
+const toastEl = document.getElementById('toast');
+
+
+/* ==========================================================================
+   3. 유틸
+   ========================================================================== */
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function nameOf(list, id) {
+  for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i].name;
+  return id;
+}
+const rxName   = function (id) { return nameOf(RX_LIST, id); };
+const suppName = function (id) { return nameOf(SUPP_LIST, id); };
+const condName = function (id) { return nameOf(COND_LIST, id); };
+function has(arr, id) { return arr.indexOf(id) !== -1; }
+
+/* 받침에 따라 은/는 을 고른다. 「은행잎는」 같은 문장이 나오면 화면 신뢰가 깎인다.
+   숫자·영문으로 끝나면 목업 표기(오메가3는)를 따라 '는'. */
+function eunNeun(word) {
+  const c = word.charCodeAt(word.length - 1);
+  if (c >= 0xAC00 && c <= 0xD7A3) return ((c - 0xAC00) % 28) ? '은' : '는';
+  return '는';
+}
+function ico(id, cls) { return '<svg class="' + (cls || 'fx-ico') + '" aria-hidden="true"><use href="#' + id + '"/></svg>'; }
+
+const LEVEL_ORDER = { warn: 0, time: 1, check: 2, info: 3 };
+function levelRank(lv) { return LEVEL_ORDER[lv]; }
+/* 항목 id → 화면 이름. 건기식 목록에 있으면 건기식, 아니면 처방약. */
+function itemLabel(id) {
+  return has(SUPP_LIST.map(function (o) { return o.id; }), id) ? suppName(id) : rxName(id);
+}
+
+/* '없어요' / '해당 없음' 은 항목이 아니라 "항목 없음"의 표시다. 분석에서 걷어낸다. */
+function realRx()    { return state.rx.filter(function (id) { return id !== 'none'; }); }
+function realConds() { return state.conds.filter(function (id) { return id !== 'none'; }); }
+
+/* 대조 대상 개수 M 과 쌍의 수 K. 직접 입력 항목은 분석하지 않으므로 여기에 넣지 않는다. */
+function itemCount() { return realRx().length + state.supps.length; }
+function pairCount() { var m = itemCount(); return m * (m - 1) / 2; }
+
+let toastTimer = null;
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { toastEl.hidden = true; }, 2600);
+}
+
+
+/* ==========================================================================
+   3.5 저장소 — 가족 구성원은 이 기기의 localStorage 에만 남는다.
+   전부 try/catch 로 감싼다: 사파리 프라이빗 모드와 file:// 에서 던진다.
+   ========================================================================== */
+const KEY_M = 'mb.v2.members';
+const KEY_A = 'mb.v2.ack';
+function storeGet(k) { try { return localStorage.getItem(k); } catch (e) { state.storeOk = false; return null; } }
+function storeSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { state.storeOk = false; return false; } }
+function storeDel(k) { try { localStorage.removeItem(k); } catch (e) { /* 무시 */ } }
+
+/* 저장된 id 를 신뢰하지 않는다 — 카탈로그에 있는 것만 통과시킨다.
+   localStorage 는 같은 출처의 다른 탭·확장도 쓸 수 있다. */
+function loadMembers() {
+  const raw = storeGet(KEY_M); if (!raw) return [];
+  try {
+    const arr = JSON.parse(raw); if (!Array.isArray(arr)) return [];
+    const rxIds = RX_LIST.map(function (o) { return o.id; });
+    const spIds = SUPP_LIST.map(function (o) { return o.id; });
+    const agIds = AGE_LIST.map(function (o) { return o.id; });
+    const cdIds = COND_LIST.map(function (o) { return o.id; });
+    const rlIds = REL_LIST.map(function (o) { return o.id; });
+    const keep = function (v, ok) {
+      return Array.isArray(v) ? v.filter(function (x) { return ok.indexOf(x) !== -1; }) : [];
+    };
+    return arr.filter(function (m) { return m && typeof m.id === 'string'; }).map(function (m) {
+      return {
+        id: String(m.id).slice(0, 24),
+        rel: has(rlIds, m.rel) ? m.rel : 'other',
+        label: String(m.label || '가족').slice(0, 12),
+        rx: keep(m.rx, rxIds), supps: keep(m.supps, spIds),
+        age: has(agIds, m.age) ? m.age : null, conds: keep(m.conds, cdIds),
+        customs: Array.isArray(m.customs)
+          ? m.customs.slice(0, 8).map(function (x) { return String(x).slice(0, 40); }) : [],
+        savedAt: String(m.savedAt || '').slice(0, 20)
+      };
+    }).slice(0, 8);
+  } catch (e) { return []; }
+}
+function saveMembers() { storeSet(KEY_M, JSON.stringify(state.members)); }
+function findMember(id) { return state.members.filter(function (m) { return m.id === id; })[0]; }
+function wipeAll() {
+  storeDel(KEY_M); storeDel(KEY_A);
+  /* activeId 를 직접 null 로 만들면 다음 switchTo(null) 이 「이미 나」로 착각해
+     `mineSnapshot = currentData()` 분기를 타고, **지운 구성원의 약·연령·특이사항이
+     「내 결과」로 승격돼 URL 해시에 실린다.** 반드시 「나」로 되돌린 뒤 비운다. */
+  if (state.activeId) {
+    state.activeId = null;
+    loadData(mineSnapshot || { rx: [], supps: [], age: null, conds: [], customs: [] });
+  }
+  state.members = []; state.storeAck = false;
+  toast('저장한 내용을 지웠습니다'); render();
+}
+
+/* 구성원 전환 — 「나」의 입력은 저장하지 않고 메모리 스냅샷으로만 들고 있는다. */
+let mineSnapshot = null;
+function currentData() {
+  return { rx: state.rx, supps: state.supps, age: state.age, conds: state.conds, customs: state.customs };
+}
+function loadData(d) {
+  state.rx = (d.rx || []).slice(); state.supps = (d.supps || []).slice(); state.age = d.age || null;
+  state.conds = (d.conds || []).slice(); state.customs = (d.customs || []).slice();
+}
+function switchTo(id) {
+  if (state.activeId) {
+    const m = findMember(state.activeId);
+    if (m) { Object.assign(m, currentData()); saveMembers(); }
+  } else { mineSnapshot = currentData(); }
+  state.activeId = id;
+  if (id) { const m = findMember(id); if (m) loadData(m); }
+  else { loadData(mineSnapshot || { rx: [], supps: [], age: null, conds: [], customs: [] }); }
+}
+const MEMBER_MAX = 8;                 /* loadMembers() 의 slice(0,8) 과 반드시 같은 값 */
+function addMember(rel) {
+  /* 상한이 없으면 9명째부터 새로고침 때 조용히 사라지고, 이어지는 저장에서 영구 삭제된다. */
+  if (state.members.length >= MEMBER_MAX) {
+    toast('가족은 ' + MEMBER_MAX + '명까지 확인할 수 있어요'); return;
+  }
+  const base = REL_LIST.filter(function (r) { return r.id === rel; })[0].label;
+  const dup = state.members.filter(function (m) { return m.rel === rel; }).length;
+  const m = { id: 'm' + Date.now().toString(36), rel: rel, label: dup ? base + ' ' + (dup + 1) : base,
+              rx: [], supps: [], age: null, conds: [], customs: [], savedAt: '' };
+  state.members.push(m); saveMembers(); switchTo(m.id); go('supp');
+}
+
+
+/* ==========================================================================
+   4. 분석 — 규칙 데이터를 훑기만 한다. 조합 지식은 여기에 없다.
+   ========================================================================== */
+function analyze() {
+  const rx = realRx(), supps = state.supps, conds = realConds();
+  const findings = [];
+
+  RULES.forEach(function (r) {
+    if (has(rx, r.rx) && has(supps, r.supp)) {
+      findings.push({
+        level: r.level, pair: [rxName(r.rx), suppName(r.supp)],
+        what: r.what, how: r.how, supp: r.supp, why: r.why, suppSlot: r.suppSlot,
+        mech: r.mech, ev: r.ev, via: r.via, itemIds: [r.rx, r.supp],
+        rule: 'RULE ' + r.rx + '-' + r.supp
+      });
+    }
+  });
+
+  RX_PAIR_RULES.forEach(function (r) {
+    if (has(rx, r.a) && has(rx, r.b)) {
+      findings.push({ level: r.level, pair: [rxName(r.a), rxName(r.b)], what: r.what, how: r.how,
+        mech: r.mech, ev: r.ev, via: r.via, itemIds: [r.a, r.b],
+        rule: 'RULE ' + r.a + '-' + r.b });
+    }
+  });
+
+  INFO_RULES.forEach(function (r) {
+    const w = r.when;
+    const ok =
+      (w.rx    || []).every(function (id) { return has(rx, id); }) &&
+      (w.supps || []).every(function (id) { return has(supps, id); }) &&
+      (w.conds || []).every(function (id) { return has(conds, id); }) &&
+      (w.rxNot || []).every(function (id) { return !has(rx, id); }) &&
+      (!w.condsAny || w.condsAny.some(function (id) { return has(conds, id); }));
+    /* 3040 변형: INFO_RULES 에 level 을 지정하면(예: 임신 금기) info 가 아니라
+       그 등급으로 뜬다 — 근거가 이미 확립된 것까지 회색 "알아두기"로 묻히지
+       않게 하기 위한 확장이다. 지정이 없으면 원래대로 info. */
+    if (ok) findings.push({ level: r.level || 'info', pair: r.pair, what: r.what, how: r.how,
+      mech: r.mech, ev: r.ev, via: r.via,
+      itemIds: (w.rx || []).concat(w.supps || []), rule: 'INFO ' + r.id });
+  });
+
+  /* ---- v2: 성분 특성에서 자동 도출한 것을 합류시킨다 ----
+     판정의 권위는 위의 큐레이션 규칙에 있다. 여기서 나오는 것은 설명 보강이며
+     절대 warn 을 만들지 않는다(MECHANISMS 의 level 은 time/check 뿐). */
+  const prof = mechProfile(rx, supps);
+  const curatedKeys = findings.filter(function (f) { return f.itemIds && f.itemIds.length; })
+                              .map(function (f) { return keyOf(f.itemIds); });
+
+  const merged = {};
+  derive(prof).forEach(function (d) {
+    const k = keyOf(d.itemIds);
+    if (curatedKeys.indexOf(k) !== -1) return;              /* 큐레이션이 이긴다 */
+    if (!merged[k]) { merged[k] = d; return; }              /* 같은 항목 집합은 한 장으로 */
+    const m = merged[k];
+    m.mech = m.mech.concat(d.mech);
+    m.via  = m.via.concat(d.via);
+    m.what = m.what + ' ' + d.what;
+    if (levelRank(d.level) < levelRank(m.level)) m.level = d.level;
+    if (EVIDENCE[d.ev].rank > EVIDENCE[m.ev].rank) m.ev = d.ev;
+  });
+
+  const derivedList = Object.keys(merged).map(function (k) { return merged[k]; })
+    .sort(function (a, b) {
+      return EVIDENCE[b.ev].rank - EVIDENCE[a.ev].rank || levelRank(a.level) - levelRank(b.level);
+    })
+    .slice(0, 4);                                            /* 상한 4건 */
+
+  const nCurated = findings.filter(function (f) { return f.level !== 'info'; }).length;
+  derivedList.forEach(function (d) { d.rule = 'DERIVED ' + d.mech[0]; findings.push(d); });
+
+  const order = { warn: 0, time: 1, check: 2, info: 3 };
+  findings.sort(function (a, b) { return order[a.level] - order[b.level]; });
+
+  const counts = { warn: 0, time: 0, check: 0, info: 0 };
+  findings.forEach(function (f) { counts[f.level]++; });
+
+  /* N 은 등급이 있는 것만 센다. 알아두기(info)는 "확인이 필요한 건수"가 아니다. */
+  return { findings: findings, counts: counts, n: counts.warn + counts.time + counts.check,
+           nCurated: nCurated, nDerived: derivedList.length, prof: prof };
+}
+
+/* SPEC §5 — 기본 배치 후 time 규칙의 suppSlot 으로 옮긴다. */
+function buildSchedule(result) {
+  const bySupp = {};
+  result.findings.forEach(function (f) {
+    if (f.level !== 'time' || !f.supp) return;
+    if (!bySupp[f.supp]) bySupp[f.supp] = { slot: f.suppSlot, whys: [] };
+    if (bySupp[f.supp].whys.indexOf(f.why) === -1) bySupp[f.supp].whys.push(f.why);
+  });
+
+  const rows = {};
+  SLOTS.forEach(function (s) { rows[s.id] = []; });
+
+  realRx().forEach(function (id) {
+    rows[DEFAULT_SLOT[id]].push({ name: rxName(id), why: '' });
+  });
+  state.supps.forEach(function (id) {
+    const moved = bySupp[id];
+    const slot = moved ? moved.slot : DEFAULT_SLOT[id];
+    rows[slot].push({ name: suppName(id), why: moved ? moved.whys.join(' · ') : '' });
+  });
+
+  return SLOTS.filter(function (s) { return rows[s.id].length > 0; })
+              .map(function (s) { return { slot: s, items: rows[s.id] }; });
+}
+
+
+/* ==========================================================================
+   5. URL 해시 (SPEC §7) — #r=anti,thy&s=omega3,calmag&a=50&c=none
+      x= 는 직접 입력 항목. 스펙에 없지만 없으면 링크로 결과가 재현되지 않는다.
+   ========================================================================== */
+function buildHash() {
+  const parts = [
+    'r=' + state.rx.join(','),
+    's=' + state.supps.join(','),
+    'a=' + (state.age || ''),
+    'c=' + state.conds.join(',')
+  ];
+  if (state.customs.length) {
+    parts.push('x=' + state.customs.map(encodeURIComponent).join(','));
+  }
+  return '#' + parts.join('&');
+}
+function reportUrl() { return location.href.split('#')[0] + buildHash(); }
+
+/* 초대 링크. 담는 것은 #invite=1 하나뿐 — 약·영양제·연령·특이사항은 담기지 않는다.
+   reportUrl() 을 여기서 쓰면 안 된다. 그 해시에 처방약과 임신·수유 여부가 있다. */
+function inviteUrl() { return location.href.split('#')[0] + '#invite=1'; }
+
+function parseHash() {
+  const raw = location.hash.replace(/^#/, '');
+  if (!raw) return null;
+  const out = {};
+  raw.split('&').forEach(function (kv) {
+    const i = kv.indexOf('=');
+    if (i === -1) return;
+    out[kv.slice(0, i)] = kv.slice(i + 1);
+  });
+  if (!('r' in out) && !('s' in out) && !('a' in out) && !('c' in out)) return null;
+
+  const split = function (v, valid) {
+    if (!v) return [];
+    return v.split(',').filter(function (x) { return x && valid.indexOf(x) !== -1; });
+  };
+  const rxIds   = RX_LIST.map(function (o) { return o.id; });
+  const suppIds = SUPP_LIST.map(function (o) { return o.id; });
+  const ageIds  = AGE_LIST.map(function (o) { return o.id; });
+  const condIds = COND_LIST.map(function (o) { return o.id; });
+
+  return {
+    rx: split(out.r, rxIds),
+    supps: split(out.s, suppIds),
+    age: has(ageIds, out.a) ? out.a : null,
+    conds: split(out.c, condIds),
+    customs: out.x ? out.x.split(',').filter(Boolean).map(decodeURIComponent) : []
+  };
+}
+function applyParsed(p) {
+  state.rx = p.rx; state.supps = p.supps; state.age = p.age;
+  state.conds = p.conds; state.customs = p.customs;
+}
+
+
+/* ==========================================================================
+   6. 화면 전환 — history.pushState 로 뒤로가기를 살린다 (SPEC §2)
+   ========================================================================== */
+function go(screen, opts) {
+  opts = opts || {};
+  state.screen = screen;
+  state.sheet = opts.sheet || null;
+  state.appNotice = false;
+  state.copyFallback = '';
+
+  /* v2 — 해시는 「나」의 결과일 때만 쓴다.
+     activeId 가 있으면 그것은 가족 구성원의 데이터다. 가족의 처방약·임신 여부가
+     주소창에 뜨면 화면 캡처·브라우저 히스토리 동기화로 제3자 민감정보가 샌다.
+     가족 리포트는 URL 로 재현하지 않는다 — 재현은 localStorage 가 한다. */
+  const isMine = !state.activeId;
+  const url = (screen === 'report' && isMine)
+    ? location.pathname + location.search + buildHash()
+    : location.pathname + location.search;
+  const snapshot = { screen: screen, sheet: state.sheet };
+
+  /* file:// 로 그냥 열었을 때 일부 브라우저는 pushState 에 SecurityError 를 던진다.
+     그때도 화면 전환 자체는 살아 있어야 한다 — 뒤로가기만 포기한다. */
+  try {
+    if (opts.replace) history.replaceState(snapshot, '', url);
+    else history.pushState(snapshot, '', url);
+  } catch (e) {
+    /* 해시 대입조차 막는 환경(data: URL 스냅샷 등)이 있다. 거기서도 화면은 살아야 한다. */
+    try {
+      if (screen === 'report' && isMine) location.hash = buildHash().slice(1);
+      else if (location.hash) location.hash = '';   /* 가족 화면으로 갈 때 남은 해시를 지운다 */
+    } catch (e2) { /* 주소창을 포기한다 — 화면 전환만 살린다 */ }
+  }
+
+  render();
+  if (!opts.keepScroll) window.scrollTo(0, 0);
+}
+
+window.addEventListener('popstate', function (e) {
+  const s = e.state;
+  if (s && s.screen) {
+    state.screen = s.screen;
+    state.sheet = s.sheet || null;
+  } else {
+    /* 히스토리 진입점 — 해시가 있으면 리포트, 없으면 랜딩 */
+    const p = parseHash();
+    if (p) { applyParsed(p); state.screen = 'report'; state.activeId = null; }
+    else { state.screen = 'landing'; }
+    state.sheet = null;
+  }
+  state.appNotice = false;
+  state.copyFallback = '';
+  render();
+  window.scrollTo(0, 0);
+  /* 동의 시트를 닫고 나서 이어서 할 일 (ack-store 참고) */
+  if (runAfterPop) { const n = runAfterPop; runAfterPop = null; n(); }
+});
+
+
+/* ==========================================================================
+   7. 화면 조각 — 목업 마크업을 그대로 옮기고 값만 상태에서 채운다
+   ========================================================================== */
+
+/* 3040 변형: 2단계(영양제 → 처방약+기본정보)로 줄었다. 기본정보(renderProfile)를
+   처방약 화면 하단에 합쳐서 화면 수 자체를 줄였기 때문 — 3040은 단계가 많으면 이탈한다. */
+function stepsBar(current) {
+  const cls = function (i) { return i < current ? 's done' : (i === current ? 's on' : 's'); };
+  return '<div class="fx-row gap-sm">' +
+    '<div class="wf-steps"><span class="' + cls(0) + '"></span><span class="' + cls(1) + '"></span></div>' +
+    '<span class="wf-steplabel">' + (current + 1) + ' / 2</span></div>';
+}
+
+function ctaBar(countHtml, act, label) {
+  return '<div class="wf-cta">' +
+    (countHtml ? '<div class="c-count">' + ico('i-check', 'fx-ico sm') + countHtml + '</div>' : '') +
+    '<button class="big-btn primary" data-act="' + act + '">' + label + '</button></div>';
+}
+
+/* ---------- A1 랜딩 ---------- */
+function renderLanding() {
+  /* 초대 링크(#invite=1)로 들어온 사람은 수신자다 — 문장을 존댓말 쪽으로 옮기고
+     글자를 키운다. 담긴 정보는 「초대로 왔다」는 부울 하나뿐이라 개인정보가 아니다. */
+  const inv = state.fromInvite;
+  return '<div class="screen-body gap-md">' +
+    (inv
+      ? '<div class="fx-row gap-sm"><button class="big-btn ghost sm" data-act="big-text">' +
+          (state.bigText ? '글자 작게' : '글자 크게') + '</button></div>'
+      : '') +
+    '<div class="wf-hero">' +
+      '<span class="h-eyebrow">' + (inv ? '확인 요청을 받고 오셨나요?' : '모두의 복약') + '</span>' +
+      '<div class="h-title">' + (inv
+        ? '지금 드시는 약이랑 영양제,<br>같이 드셔도 괜찮을까요?'
+        : '지금 먹는 약이랑 영양제,<br>같이 먹어도 괜찮을까요?') + '</div>' +
+      '<div class="h-sub">' + (inv
+        ? '가족분이 보내신 링크예요. 드시는 것만 골라주시면 1분 안에 결과가 나옵니다.'
+        : '약과 건강기능식품을 함께 확인해 드립니다. 병원과 약국에서 따로 묻기 어려웠던 조합이요.') + '</div>' +
+    '</div>' +
+    '<div class="wf-trust">' +
+      '<div>' + ico('i-users') + '<b>가입 없음</b><span>로그인하지 않아도 결과를 봅니다</span></div>' +
+      '<div>' + ico('i-clock') + '<b>1분</b><span>두 번만 고르면 끝나요</span></div>' +
+      '<div>' + ico('i-check-circle') + '<b>무료</b><span>결제 단계가 없습니다</span></div>' +
+    '</div>' +
+    '<div class="fx-spacer"></div>' +
+    '<button class="big-btn primary" data-act="start">' +
+      (inv ? '지금 드시는 것 고르기' : '내 조합 확인하기') + ico('i-chevron-right') + '</button>' +
+    (state.members.length
+      ? '<button class="big-btn secondary" data-act="to-family">' + ico('i-users') + '우리 가족 복용 점검</button>'
+      : '') +
+    '<div class="fx-cap fx-center">이 결과는 진단이 아니며, 의사·약사의 판단을 대신하지 않습니다.</div>' +
+    '<div class="fx-divider"></div>' +
+    '<div class="wf-disclaim">' + DISCLAIMER + '</div>' +
+  '</div>';
+}
+
+/* ---------- 2단계: 처방약 + 기본정보 ----------
+   3040 변형에서는 기본정보(연령대·특이사항, 원래 별도 화면이던 A4)를 이
+   화면 하단에 합쳤다. 화면 수를 줄이려는 것 — 3040은 단계가 많으면 이탈한다.
+   그래서 이 화면의 CTA 는 "다음"이 아니라 바로 "분석하기"다. */
+function renderRx() {
+  const chips = RX_LIST.map(function (o) {
+    return '<button class="chip wf' + (has(state.rx, o.id) ? ' selected' : '') + '" ' +
+           'data-act="rx-toggle" data-id="' + o.id + '" aria-pressed="' + has(state.rx, o.id) + '">' + o.name + '</button>';
+  }).join('');
+
+  const n = realRx().length;
+  const count = has(state.rx, 'none')
+    ? '처방받아 먹는 약이 없다고 했어요'
+    : '<b>' + n + '개</b> 골랐어요';
+
+  const ages = AGE_LIST.map(function (o) {
+    return '<button class="chip wf sm' + (state.age === o.id ? ' selected' : '') + '" ' +
+      'data-act="age" data-id="' + o.id + '" aria-pressed="' + (state.age === o.id) + '">' + o.name + '</button>';
+  }).join('');
+  const conds = COND_LIST.map(function (o) {
+    const on = has(state.conds, o.id);
+    return '<button class="chip wf sm' + (on ? ' selected' : '') + '" ' +
+      'data-act="cond" data-id="' + o.id + '" aria-pressed="' + on + '">' + o.name + '</button>';
+  }).join('');
+
+  return '<div class="screen-body gap-md">' +
+    ctxBar() +
+    stepsBar(1) +
+    '<div class="t-title">지금 처방받아<br>먹는 약이 있나요?</div>' +
+    '<div class="fx-cap16">정확한 이름을 몰라도 괜찮아요. 종류만 골라주세요.</div>' +
+    '<div class="fx-chips">' + chips + '</div>' +
+    '<div class="fx-cap">' + count + '</div>' +
+    '<div class="fx-divider"></div>' +
+    '<div class="fx-cap">이름을 정확히 알고 계시다면</div>' +
+    '<button class="row-card" data-act="to-search">' +
+      '<div class="icon-box">' + ico('i-search') + '</div>' +
+      '<div class="grow stack gap-xs"><span class="t-body bold">약 이름으로 검색</span>' +
+      '<span class="fx-cap">봉투에 적힌 이름으로 찾기</span></div>' +
+      ico('i-chevron-right', 'fx-ico t-secondary') +
+    '</button>' +
+    '<button class="row-card" data-act="to-cam">' +
+      '<div class="icon-box">' + ico('i-camera') + '</div>' +
+      '<div class="grow stack gap-xs"><span class="t-body bold">약봉투 사진으로 찾기</span>' +
+      '<span class="fx-cap">사진 한 장이면 됩니다</span></div>' +
+      ico('i-chevron-right', 'fx-ico t-secondary') +
+    '</button>' +
+    '<div class="fx-divider"></div>' +
+    '<div class="section-title first">나이대가 어떻게 되세요?</div>' +
+    '<div class="fx-chips tight">' + ages + '</div>' +
+    '<div class="section-title">해당되는 것이 있나요?</div>' +
+    '<div class="fx-chips tight">' + conds + '</div>' +
+    '<div class="fx-divider"></div>' +
+    '<div class="card fx-strip">' +
+      '<div><b>' + realRx().length + '</b><span>처방약</span></div>' +
+      '<div><b>' + state.supps.length + '</b><span>건강기능식품</span></div>' +
+      '<div><b>' + pairCount() + '</b><span>확인할 조합</span></div>' +
+    '</div>' +
+    (state.customs.length
+      ? '<div class="fx-cap">직접 입력하신 ' + state.customs.length + '개는 대조 대상에서 빠지고, 리포트에 그대로 실립니다.</div>'
+      : '') +
+  '</div>' +
+  '<div class="wf-cta"><button class="big-btn primary" data-act="analyze">' +
+    ico('i-shield-check') + '분석하기</button></div>';
+}
+
+/* ---------- B1 이름 검색 ---------- */
+function renderSearch() {
+  return '<div class="screen-header">' +
+      '<button class="sh-side" data-act="back" aria-label="뒤로">' + ico('i-chevron-left') + '</button>' +
+      '<div class="sh-title">약 이름으로 찾기</div><div class="sh-side"></div>' +
+    '</div>' +
+    '<div class="screen-body gap-md">' +
+      '<div class="row-card">' +
+        '<div class="icon-box">' + ico('i-search') + '</div>' +
+        '<div class="grow stack gap-xs">' +
+          '<input class="wf-searchinput" id="q" type="search" autocomplete="off" placeholder="약 이름 일부를 넣어 보세요" value="' + esc(state.q) + '">' +
+          '<span class="fx-cap">이름 일부만 넣어도 찾아드려요</span>' +
+        '</div>' +
+      '</div>' +
+      '<div id="search-results" class="fx-col gap-md">' + searchResults() + '</div>' +
+      '<div class="fx-divider"></div>' +
+      '<button class="big-btn ghost" data-act="back">이름을 모르겠어요 — 종류로 고르기</button>' +
+    '</div>';
+}
+function searchResults() {
+  const q = state.q.trim();
+  if (!q) return '<span class="fx-cap">봉투에 적힌 이름을 넣어주세요. 예: 아모잘</span>';
+
+  const hits = DRUG_SEARCH.filter(function (d) { return d.name.indexOf(q) !== -1; });
+  if (!hits.length) {
+    return '<div class="warn-banner info">' + ico('i-alert-circle') +
+      '<span>찾는 약이 없으면 종류로 골라주세요</span></div>' +
+      '<button class="big-btn secondary" data-act="back">종류로 고르기</button>';
+  }
+  return '<span class="fx-cap">검색 결과 ' + hits.length + '개</span>' +
+    hits.map(function (d) {
+      const i = DRUG_SEARCH.indexOf(d);
+      const on = has(state.rx, d.rx);
+      return '<button class="row-card" data-act="pick-drug" data-i="' + i + '">' +
+        '<div class="icon-box lg"><span class="fx-pill oval score"></span></div>' +
+        '<div class="grow stack gap-xs">' +
+          '<span class="t-body bold">' + d.name + '</span>' +
+          '<span class="fx-row gap-sm"><span class="tag rx">처방약</span>' +
+          '<span class="fx-cap">' + rxName(d.rx) + '으로 담깁니다</span></span>' +
+        '</div>' +
+        (on ? ico('i-check-circle', 'fx-ico t-blue') : ico('i-plus', 'fx-ico t-secondary')) +
+      '</button>';
+    }).join('');
+}
+
+/* ---------- B2 카메라 ---------- */
+function renderCam() {
+  return '<div class="screen-header">' +
+      '<button class="sh-side" data-act="back" aria-label="닫기">' + ico('i-x') + '</button>' +
+      '<div class="sh-title">약봉투 사진으로 찾기</div><div class="sh-side"></div>' +
+    '</div>' +
+    '<div class="wf-cam">' +
+      '<div class="cm-demo">데모 — 실제 인식이 아닙니다</div>' +
+      '<div class="cm-guide">약 이름이 보이도록<br>봉투를 비춰주세요</div>' +
+      '<div class="cm-hint">이 프로토타입에는 카메라도 문자 인식도 붙어 있지 않습니다. 촬영을 누르면 미리 적어 둔 예시 결과가 나옵니다.</div>' +
+    '</div>' +
+    '<div class="footer-bar">' +
+      '<button class="big-btn primary" data-act="to-ocr">' + ico('i-camera', 'fx-ico lg') + '촬영하기</button>' +
+    '</div>';
+}
+
+/* ---------- B3 인식 결과 확인 ---------- */
+function renderOcr() {
+  const rows = OCR_DEMO.map(function (o, i) {
+    const on = state.ocrPick[i];
+    return '<button class="row-card" data-act="ocr-toggle" data-i="' + i + '" aria-pressed="' + on + '">' +
+      '<div class="icon-box lg' + (o.sure ? '' : ' orange') + '"><span class="fx-pill' + (o.sure ? ' oval' : '') + ' score"></span></div>' +
+      '<div class="grow stack gap-xs">' +
+        '<span class="t-body bold">' + o.name + '</span>' +
+        '<span class="fx-row gap-sm">' +
+          '<span class="tag ' + (o.sure ? 'rx' : 'warn') + '">' + (o.sure ? '처방약' : '확인 필요') + '</span>' +
+          '<span class="fx-cap">' + o.note + ' · ' + rxName(o.rx) + '</span>' +
+        '</span>' +
+      '</div>' +
+      (on ? ico('i-check-circle', 'fx-ico t-blue') : ico('i-plus', 'fx-ico t-secondary')) +
+    '</button>';
+  }).join('');
+
+  const picked = state.ocrPick.filter(Boolean).length;
+
+  return '<div class="screen-header">' +
+      '<button class="sh-side" data-act="back" aria-label="뒤로">' + ico('i-chevron-left') + '</button>' +
+      '<div class="sh-title">이렇게 읽었어요</div><div class="sh-side"></div>' +
+    '</div>' +
+    '<div class="screen-body gap-md">' +
+      '<div class="warn-banner caution">' + ico('i-alert-triangle') +
+        '<span>데모 — 실제 인식이 아닙니다. 아래 3건은 미리 적어 둔 예시 결과입니다.</span></div>' +
+      '<div class="warn-banner info">' + ico('i-alert-circle') +
+        '<span>3개를 찾았어요. 맞는지 확인해주세요.</span></div>' +
+      rows +
+      '<span class="fx-cap">눌러서 넣고 뺄 수 있어요. 흐리게 읽힌 것은 처음부터 빼 두었습니다.</span>' +
+    '</div>' +
+    '<div class="footer-bar">' +
+      '<button class="big-btn primary" data-act="ocr-confirm">' + picked + '개 이대로 등록하기</button>' +
+    '</div>';
+}
+
+/* ---------- 1단계: 건기식 ----------
+   3040 변형에서는 영양제가 진입점이다(원래 처방약 → 건기식 순서를 뒤집었다).
+   고령층 대상 원본은 "영양제 앱으로 읽히면 안 된다"는 이유로 처방약을 먼저
+   물었지만, 3040은 반대로 자기가 먹는 영양제 스택 자체가 관심사다. */
+function renderSupp() {
+  const tiles = SUPP_LIST.map(function (o) {
+    const on = has(state.supps, o.id);
+    return '<button class="wf-tile' + (on ? ' on' : '') + '" data-act="supp-toggle" data-id="' + o.id + '" aria-pressed="' + on + '">' +
+      '<span class="t-name">' + o.name + '</span>' +
+      '<span class="t-check">' + ico('i-check') + '</span></button>';
+  }).join('') +
+  '<button class="wf-tile" data-act="open-custom">' +
+    '<span class="t-name">' + ico('i-plus', 'fx-ico sm') + '직접 입력' +
+    (state.customs.length ? ' ' + state.customs.length : '') + '</span></button>';
+
+  const customBlock = state.customs.length
+    ? '<div class="fx-col gap-sm">' +
+        '<div class="fx-cap">직접 적어 주신 것 — 이번 분석에서는 <b>제외</b>되고, 리포트의 「확인하지 못한 것」에 그대로 실립니다.</div>' +
+        '<div class="fx-chips tight">' + state.customs.map(function (c, i) {
+          return '<span class="chip sm">' + esc(c) +
+            '<button class="wf-x" data-act="del-custom" data-i="' + i + '" aria-label="빼기">' + ico('i-x', 'fx-ico sm') + '</button></span>';
+        }).join('') + '</div>' +
+      '</div>'
+    : '';
+
+  return '<div class="screen-body gap-md">' +
+    ctxBar() +
+    stepsBar(0) +
+    '<div class="t-title">영양제나<br>건강기능식품은요?</div>' +
+    '<div class="warn-banner info">' + ico('i-alert-circle') +
+      '<span>약과 함께 먹으면 서로 영향을 주는 것들이 있습니다. 여기가 가장 중요해요.</span></div>' +
+    '<div class="wf-grid">' + tiles + '</div>' +
+    customBlock +
+  '</div>' + ctaBar('<b>' + state.supps.length + '개</b> 골랐어요', 'to-rx', '다음');
+}
+
+/* ---------- 시트 3종: 직접 입력 / 저장 동의 / 초대 ---------- */
+function renderSheet() {
+  switch (state.sheet) {
+    case 'custom':  return sheetCustom();
+    case 'consent': return sheetConsent();
+    case 'invite':  return sheetInvite();
+    default:        return '';
+  }
+}
+
+/* 첫 구성원을 저장하기 직전 1회. 「이 브라우저에만」을 명시한다. */
+function sheetConsent() {
+  return '<div class="wf-dim" data-act="close-sheet"></div>' +
+    '<div class="wf-sheet" role="dialog" aria-label="가족 정보 저장 안내">' +
+      '<div class="sh-grab"></div>' +
+      '<div class="t-title">가족 정보를 이 기기에 저장합니다</div>' +
+      '<div class="fx-cap16">이 브라우저에만 저장되고 서버로 보내지 않습니다. ' +
+        '다른 기기에서는 보이지 않고, 브라우저 기록을 지우면 함께 사라집니다.</div>' +
+      '<div class="wf-disclaim">가족의 약·영양제는 <b>민감정보</b>입니다. 공용 PC나 남과 함께 쓰는 기기라면 ' +
+        '확인이 끝난 뒤 「저장한 내용 모두 지우기」로 지워 주세요.</div>' +
+      '<button class="big-btn primary" data-act="ack-store">알겠습니다. 계속할게요</button>' +
+      '<button class="big-btn ghost" data-act="close-sheet">그만두기</button>' +
+    '</div>';
+}
+
+/* 초대 시트 — 링크에 담기는 것은 #invite=1 하나뿐이다. */
+function sheetInvite() {
+  const inv = state.invite;
+  if (!inv) return '';
+  const tabs = inv.target === 'ack' ? '' :
+    '<div class="inv-tabs">' + INVITE_TABS.map(function (t) {
+      return '<button class="chip sm' + (inv.target === t.id ? ' selected' : '') + '" ' +
+        'data-act="inv-tab" data-target="' + t.id + '">' + t.label + '</button>';
+    }).join('') + '</div>';
+
+  const msgs = (INVITE_MSGS[inv.target] || []).map(function (o) {
+    return '<button class="inv-msg' + (inv.msgId === o.id ? ' on' : '') + '" ' +
+      'data-act="pick-msg" data-id="' + o.id + '"><span class="inv-radio"></span>' +
+      '<span>' + esc(o.t) + (o.noLink ? '<span class="inv-nolink">링크 없이 문구만 보냅니다</span>' : '') +
+      '</span></button>';
+  }).join('');
+
+  return '<div class="wf-dim" data-act="close-sheet"></div>' +
+    '<div class="wf-sheet" role="dialog" aria-label="확인 요청 보내기">' +
+      '<div class="sh-grab"></div>' +
+      '<div class="t-title">' + (inv.target === 'ack' ? '확인했다고 알려주기' : '뭘 드시는지 물어보기') + '</div>' +
+      tabs +
+      '<div class="inv-msgs">' + msgs + '</div>' +
+      '<textarea class="inv-text" id="invite-text" maxlength="200">' + esc(inv.text) + '</textarea>' +
+      (navigator.share
+        ? '<button class="big-btn primary" data-act="send-invite">' + ico('i-send') + '카톡 등으로 보내기</button>'
+        : '') +
+      '<button class="big-btn secondary" data-act="copy-invite">' + ico('i-copy') + '문구 복사</button>' +
+      '<button class="big-btn ghost" data-act="copy-invite-link">링크만 복사</button>' +
+      '<div class="inv-note">이 링크에는 고르신 약·영양제가 담기지 않습니다. 서비스 주소만 전달됩니다.</div>' +
+    '</div>';
+}
+
+function sheetCustom() {
+  return '<div class="wf-dim" data-act="close-sheet"></div>' +
+    '<div class="wf-sheet" role="dialog" aria-label="직접 입력">' +
+      '<div class="sh-grab"></div>' +
+      '<div class="t-title">먹는 걸 적어주세요</div>' +
+      '<div class="fx-cap16">여기 적으신 것은 <b>분석 대상에서 빠집니다.</b> 저희가 모르는 성분을 아는 척하지 않으려는 것이라, ' +
+        '대신 리포트의 「무엇을 확인하지 못했나요」에 적어 주신 그대로 싣습니다.</div>' +
+      '<form data-act="add-custom">' +
+        '<input class="input" id="custom-input" type="text" maxlength="40" placeholder="예: 아르기닌, 콜라겐" autocomplete="off">' +
+        '<button class="big-btn secondary" type="submit">' + ico('i-plus') + '추가하기</button>' +
+      '</form>' +
+      (state.customs.length
+        ? '<div class="fx-chips tight">' + state.customs.map(function (c, i) {
+            return '<span class="chip sm">' + esc(c) +
+              '<button class="wf-x" data-act="del-custom" data-i="' + i + '" aria-label="빼기">' + ico('i-x', 'fx-ico sm') + '</button></span>';
+          }).join('') + '</div>'
+        : '<span class="fx-cap">아직 적으신 것이 없습니다.</span>') +
+      '<button class="big-btn primary" data-act="close-sheet">닫기</button>' +
+    '</div>';
+}
+
+/* A4 프로필 화면은 3040 변형에 없다 — 기본정보(연령대·특이사항)는 renderRx()
+   하단에 합쳐졌다. 위 stepsBar 주석 참고. */
+
+/* ---------- A5 분석 중 ---------- */
+function renderAnalyzing() {
+  const lines = [
+    '고르신 ' + itemCount() + '개를 확인했어요',
+    '대표 성분 ' + ingredientCount() + '개를 펼치는 중',
+    '각 성분의 작용 특성 ' + mechCount() + '가지를 확인하는 중',
+    '적용할 규칙 ' + ruleCount() + '개를 대조하는 중',
+    '리포트를 만들고 있어요'
+  ];
+  const html = lines.map(function (t, i) {
+    const cls = i < state.step ? 'wf-line done' : (i === state.step ? 'wf-line now' : 'wf-line');
+    return '<div class="' + cls + '"><span class="l-dot">' +
+      (i < state.step ? ico('i-check', 'fx-ico sm') : '') + '</span><span>' + t + '</span></div>';
+  }).join('');
+
+  return '<div class="screen-body gap-lg">' +
+    '<div class="fx-spacer"></div>' +
+    '<div class="wf-scan">' +
+      '<svg class="scan-ring" viewBox="0 0 100 100" aria-hidden="true">' +
+        '<circle class="scan-track" cx="50" cy="50" r="44"/>' +
+        '<circle class="scan-sweep" cx="50" cy="50" r="44"/>' +
+      '</svg>' + ico('i-shield-check', 'fx-ico xl') + '</div>' +
+    '<div class="t-title fx-center">조합을 확인하고 있어요</div>' +
+    '<div class="wf-lines">' + html + '</div>' +
+    '<div class="fx-spacer"></div>' +
+    '<div class="fx-cap fx-center">잠시만요. 곧 끝납니다.</div>' +
+  '</div>';
+}
+
+/* ---------- A6~A9 + C1 리포트 (한 페이지 스크롤) ---------- */
+/* ---------- 공유 카드 — 이 3040 변형의 핵심 ----------
+   9:16에 가까운 세로 카드를 renderReport() 최상단에 둔다. 스크린샷해서 인스타
+   스토리에 올리는 것이 전제라, 판정(주의 有/無)과 무관하게 항상 같은 톤으로
+   그린다 — "주의 0건"이라고 카드 색이 초록·체크로 바뀌지 않는다(§3 금지 규칙).
+   findings 중 info 등급은 뺀다 — 카드의 N 도 res.n 처럼 warn/time/check 만 센다. */
+/* 공유 카드는 남에게 보여지는 유일한 화면이다. 따라서 **약 이름·건기식 이름·특이사항을
+   절대 싣지 않는다.** 처방약 목록과 임신·수유 같은 특이사항은 개인정보보호법 §23 민감정보이고,
+   출시전략 §7의 판정도 같다 — "개인 리포트는 민감정보라 공유되지 않는다. 공유 단위는 익명 조합 카드".
+   실을 수 있는 것은 개수와 등급 분포뿐이다. */
+/* ==========================================================================
+   조합 유형 (30·40대 변형 v2) — 8종
+
+   유형은 **「무엇을 먹는가」만** 말한다. 「안전한가」는 절대 말하지 않는다.
+   그래서 typeOfSupps() 는 supps 배열 하나만 읽는다. state.rx / state.conds /
+   analyze() 결과를 끌어들이는 순간 P4 원칙(주의 없음 ≠ 문제 없음)이 무너지고,
+   동시에 공유 카드에 민감정보가 새어 들어갈 통로가 생긴다.
+   계열은 3종씩 4계열로 균등하다. 크기가 다르면(v1 의 5/3/2/2) 큰 계열이 항상
+   이겨서 작은 계열 유형이 구조적으로 죽는다.
+   ⚠ 아연을 「미용」, 철분을 「장·간·혈」에 둔 것은 검수 대상이다.
+   ========================================================================== */
+const TYPE_CATS = [
+  { key: 'basic',  label: '기초',     ids: ['multi', 'vitd', 'mag'] },
+  { key: 'vital',  label: '활력',     ids: ['omega3', 'redgin', 'protein'] },
+  { key: 'beauty', label: '미용',     ids: ['collagen', 'lutein', 'zinc'] },
+  { key: 'gut',    label: '장·간·혈', ids: ['probio', 'milk', 'iron'] }
+];
+const TYPE_KEYS = TYPE_CATS.map(function (t) { return t.key; });
+
+/* 이모지를 쓰지 않는다 — 렌더 색을 통제할 수 없어 초록 유입 경로가 된다. */
+const TYPES = {
+  none:    { icon: 'i-t-none',    name: '관망 중',       line: '아직 고른 것이 없어요' },
+  minimal: { icon: 'i-t-minimal', name: '미니멀 베이스', line: '필요한 자리에 하나씩만 얹는 편' },
+  basic:   { icon: 'i-t-basic',   name: '기초 다지기',   line: '매일의 바탕부터 채우는 편' },
+  vital:   { icon: 'i-t-vital',   name: '컨디션 관리',   line: '체력·혈행 쪽에 무게를 둔 편' },
+  beauty:  { icon: 'i-t-beauty',  name: '겉모습 케어',   line: '피부·눈·모발을 챙기는 편' },
+  gut:     { icon: 'i-t-gut',     name: '속 관리',       line: '장·간·혈액 쪽을 먼저 챙기는 편' },
+  broad:   { icon: 'i-t-broad',   name: '올라운드',      line: '네 계열을 빠짐없이 채우는 편' },
+  stack:   { icon: 'i-t-stack',   name: '스택 빌더',     line: '두세 계열을 같은 비중으로 겹쳐 쌓는 편' }
+};
+
+/* 계열 일반론. 개인 판정이 아니다. ⚠ 검수 전 — 약사 검수 필요 */
+const TYPE_NOTE = {
+  none:    '지금 드시는 약만으로도 대조할 것이 있습니다. 처방약끼리, 그리고 앞으로 더할 영양제와의 조합을 미리 보아 두면 도움이 됩니다.',
+  minimal: '가짓수가 적다고 대조가 끝나는 것은 아닙니다. 복합제 1개는 성분으로는 여러 개라, 개수보다 성분표를 먼저 보는 편이 정확합니다.',
+  basic:   '종합비타민은 겉보기 1개지만 성분으로는 열 가지가 넘습니다. 단일 제품을 함께 드실 때 같은 성분이 두 번 들어가는지부터 보는 것이 일반적인 점검 순서입니다.',
+  vital:   '이 계열에는 혈액이 굳는 속도에 영향을 준다고 보고된 성분이 섞여 있습니다. 소염진통제처럼 같은 특성을 가진 약과 겹치는지가 흔한 점검 지점입니다.',
+  beauty:  '루테인 같은 지용성 성분은 기름과 함께 흡수되고, 아연은 다른 미네랄과 같은 흡수 통로를 나눠 씁니다. 무엇과 같은 시간에 먹느냐가 흡수량을 바꿉니다.',
+  gut:     '이 계열은 흡수와 대사 경로에 얽히는 성분이 많습니다. 철분은 다른 약의 흡수를 막을 수 있고, 밀크씨슬은 간에서 약과 같은 효소를 씁니다.',
+  broad:   '계열이 넓게 퍼지면 서로 다른 제품에 같은 성분이 중복으로 들어가기 쉽습니다. 아연·마그네슘·비타민D는 특히 여러 제품에 함께 들어가는 성분입니다.',
+  stack:   '같은 계열을 겹쳐 쌓으면 성분보다 용량이 먼저 쌓입니다. 같은 성분의 하루 총량이 얼마인지 합산해 보는 것이 일반적인 점검 방법입니다.'
+};
+
+/* 판정 — supps 배열 하나만 읽는다. 가족 보드에서도 재사용하므로 인자를 받는다. */
+function typeOfSupps(supps) {
+  const cats = {};
+  TYPE_CATS.forEach(function (t) {
+    cats[t.key] = t.ids.filter(function (id) { return has(supps, id); }).length; });
+  const n = supps.length;
+  if (!n) return { key: 'none', cats: cats, n: 0, span: 0, top: null };
+
+  const span = TYPE_KEYS.filter(function (k) { return cats[k] > 0; }).length;
+  const rank = TYPE_KEYS.slice().sort(function (a, b) {
+    return cats[b] - cats[a] || TYPE_KEYS.indexOf(a) - TYPE_KEYS.indexOf(b); });
+  const top = rank[0], c1 = cats[top], c2 = cats[rank[1]];
+
+  let key;
+  if (c1 > c2 && c1 * 3 >= n) key = top;   /* 단독 최다 & 전체의 1/3 이상 */
+  else if (n <= 3)            key = 'minimal';
+  else if (span >= 4)         key = 'broad';
+  else                        key = 'stack';
+  return { key: key, cats: cats, n: n, span: span, top: (key === top ? top : null) };
+}
+function typeOf() { return typeOfSupps(state.supps); }
+
+/* 판정 이유 한 줄 — 유형이 임의로 붙은 것이 아님을 보이는 자리.
+   개수를 노출하므로 **공유 카드에 넣지 않는다.** 리포트 본문 전용. */
+function typeWhy(t) {
+  if (t.key === 'none') {
+    return state.customs.length
+      ? '직접 적어 주신 것은 계열을 알 수 없어 유형 계산에서 빠집니다.'
+      : '아직 고르신 것이 없습니다.';
+  }
+  if (t.top) {
+    const label = TYPE_CATS.filter(function (c) { return c.key === t.top; })[0].label;
+    return '고르신 ' + t.n + '개 중 ' + t.cats[t.top] + '개가 「' + label + '」 계열입니다.';
+  }
+  if (t.key === 'minimal') return '고르신 ' + t.n + '개가 서로 다른 계열에서 하나씩입니다.';
+  if (t.key === 'broad')   return '네 계열 모두에 걸쳐 있고, 특별히 몰린 계열이 없습니다.';
+  return t.span + '개 계열에 ' + t.n + '개가 같은 비중으로 나뉘어 있습니다.';
+}
+
+/* 4축 레이더. 인라인 SVG 라 외부 요청이 없다. 축은 위·오른쪽·아래·왼쪽 순. */
+const RADAR_DIR = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+/* v2 — 자기 최대값이 아니라 계열 크기(3)로 정규화한다. 자기 최대값으로 맞추면
+   1개 먹는 사람과 9개 먹는 사람의 그래프가 같은 크기로 그려져 비교가 성립하지 않는다. */
+function radarPoint(cats, key, i) {
+  const v = cats[key] ? 0.3 + 0.7 * (cats[key] / 3) : 0.07;
+  return [50 + RADAR_DIR[i][0] * 34 * v, 50 + RADAR_DIR[i][1] * 34 * v];
+}
+function radar(cats) {
+  const order = TYPE_CATS.map(function (t) { return t.key; });
+  const pts = order.map(function (k, i) {
+    const p = radarPoint(cats, k, i);
+    return p[0].toFixed(1) + ',' + p[1].toFixed(1);
+  });
+  const ring = function (f) {
+    return '<polygon class="rd-ring" points="' + RADAR_DIR.map(function (d) {
+      return (50 + d[0] * 34 * f).toFixed(1) + ',' + (50 + d[1] * 34 * f).toFixed(1);
+    }).join(' ') + '"/>';
+  };
+  const dots = order.map(function (k, i) {
+    const p = radarPoint(cats, k, i);
+    return '<circle class="rd-dot' + (cats[k] ? '' : ' off') + '" cx="' + p[0].toFixed(1) +
+           '" cy="' + p[1].toFixed(1) + '" r="2.8"/>';
+  }).join('');
+
+  return '<div class="rd-wrap">' +
+    '<span class="rd-l t">기초</span><span class="rd-l r">활력</span>' +
+    '<span class="rd-l b">미용</span><span class="rd-l l">장·간·혈</span>' +
+    '<svg class="rd" viewBox="0 0 100 100" role="img" aria-label="영양제 구성 그래프">' +
+      ring(1) + ring(0.62) + ring(0.3) +
+      '<line class="rd-ax" x1="50" y1="16" x2="50" y2="84"/>' +
+      '<line class="rd-ax" x1="16" y1="50" x2="84" y2="50"/>' +
+      '<polygon class="rd-area" points="' + pts.join(' ') + '"/>' + dots +
+    '</svg>' +
+  '</div>';
+}
+
+/* 대조한 쌍을 점 하나씩. 등급이 나온 쌍만 색이 들어온다.
+   이름을 싣지 않으면서 "몇 쌍을 훑었는지"가 눈에 보이게 하는 것이 목적이라
+   공유 카드가 아니라 리포트 본문에 둔다(카드는 공유용, 격자는 이해용). */
+const MAX_DOTS = 72;
+function dotGrid(res, k) {
+  const seq = [];
+  ['warn', 'time', 'check'].forEach(function (lv) {
+    for (let i = 0; i < res.counts[lv]; i++) seq.push(lv);
+  });
+  let dots = '';
+  for (let i = 0; i < Math.min(k, MAX_DOTS); i++) {
+    dots += '<span class="sc-dot' + (seq[i] ? ' sc-' + seq[i] : '') + '"></span>';
+  }
+  return '<div class="card fx-col gap-sm">' +
+    '<div class="sc-grid">' + dots + '</div>' +
+    '<div class="sc-stat"><b>' + k + '</b>쌍을 하나씩 대조했어요' +
+      (k > MAX_DOTS ? ' <span class="sc-more">(그림은 ' + MAX_DOTS + '쌍까지)</span>' : '') + '</div>' +
+    levelChips(res) +
+  '</div>';
+}
+
+function levelChips(res) {
+  const dist = [
+    { key: 'warn',  label: '주의' },
+    { key: 'time',  label: '시간 조정' },
+    { key: 'check', label: '확인 권장' }
+  ].filter(function (d) { return res.counts[d.key] > 0; });
+  return dist.length
+    ? '<div class="sc-chips">' + dist.map(function (d) {
+        return '<span class="sc-chip sc-' + d.key + '"><i></i>' + d.label + ' ' + res.counts[d.key] + '</span>';
+      }).join('') + '</div>'
+    : '<div class="sc-chips"><span class="sc-chip sc-none">이번 조합에서 확인된 신호 없음 · 확인하지 못한 것 ' +
+        coverageMissing(res).length + '가지</span></div>';
+}
+
+/* 유형 공개 — 분석 직후 가장 먼저 보이는 블록. */
+function typeReveal(t) {
+  const T = TYPES[t.key];
+  return '<div class="wf-reveal">' +
+    '<div class="rv-cap">내 영양제 조합 유형</div>' +
+    '<div class="rv-icon">' + ico(T.icon, 'fx-ico xl') + '</div>' +
+    '<div class="rv-name">' + T.name + '</div>' +
+    '<div class="rv-line">' + T.line + '</div>' +
+    '<div class="rv-why">' + typeWhy(t) + '</div>' +
+  '</div>';
+}
+
+function shareCard(res, m, k) {
+  const t = typeOf();
+  const T = TYPES[t.key];
+
+  return '<div class="wf-sharecard">' +
+    '<div class="sc-top">' +
+      '<span class="sc-badge">내 영양제 조합 유형</span>' +
+      ico(T.icon, 'sc-icon') +
+      '<span class="sc-tname">' + T.name + '</span>' +
+      /* typeWhy() 는 개수를 노출하므로 카드에 싣지 않는다. */
+      '<div class="sc-tline">' + T.line + '</div>' +
+    '</div>' +
+    '<div class="sc-mid">' + radar(t.cats) + '</div>' +
+    '<div class="sc-bot">' +
+      '<div class="sc-stat"><b>' + m + '</b>개가 만나는 <b>' + k + '</b>쌍을 대조했어요</div>' +
+      levelChips(res) +
+    '</div>' +
+    '<div class="sc-foot">' +
+      '<span class="sc-word">모두의 복약</span>' +
+      '<span class="sc-tag">가입 없이 1분</span>' +
+    '</div>' +
+    /* 카드는 스크린샷으로 앱 밖을 돌아다니는 유일한 반출물이다. 상단 데모 띠와
+       하단 고지문은 카드 바깥에 있어 캡처에 따라오지 않으므로, 표식을 카드 안에 박는다. */
+    '<div class="sc-demo">검수 전 프로토타입 · 진단이 아닙니다</div>' +
+  '</div>';
+}
+
+function renderReport() {
+  const res = analyze();
+  const m = itemCount(), k = pairCount();
+  const rx = realRx();
+  const t = typeOf();
+  const missing = coverageMissing(res);
+
+  /* ---------- 판정 블록 ----------
+     P4 를 색이 아니라 레이아웃으로 강제한다. 「0」 옆에 같은 시각 무게의
+     「확인하지 못한 것 N」을 두면 눈이 0만 집어 갈 수 없다. */
+  const src = (res.nDerived > 0)
+    ? '<div class="v-src">규칙에서 ' + res.nCurated + '건 · 성분 특성에서 ' + res.nDerived + '건</div>' : '';
+
+  const verdict = res.n > 0
+    ? '<div class="wf-verdict warn"><div class="v-num num">' + res.n + '</div>' +
+      '<div class="v-label">가지 확인이 필요해요</div>' +
+      '<div class="v-sub">먹는 ' + m + '개가 만나는 ' + k + '쌍을 대조한 결과입니다</div>' + src + '</div>'
+    /* ⚠ class="wf-verdict clear" 리터럴을 이 순서 그대로 유지한다 — check.mjs 가 이 문자열을 찾는다 */
+    : '<div class="wf-verdict clear">' +
+        '<div class="v-pair">' +
+          '<div><span class="v-num num">0</span><span class="v-label">확인된 주의 신호</span></div>' +
+          '<div><button class="v-jump" data-act="scrollto" data-target="notchecked">' +
+            '<span class="v-alt num">' + missing.length + '</span>' +
+            '<span class="v-altlabel">확인하지 못한 것</span></button></div>' +
+        '</div>' +
+        '<div class="v-sub">주의 신호가 없다는 것과 문제가 없다는 것은 다릅니다. 아래 「무엇을 확인하지 못했나요」를 꼭 읽어 주세요.</div>' +
+      '</div>';
+
+  /* 확인한 것 */
+  const listOr = function (ids, f) {
+    return ids.length ? ids.map(f).join(' · ') : '고르신 것이 없습니다';
+  };
+  const checked = '<div class="card fx-col gap-sm">' +
+    '<div class="fx-row gap-sm"><span class="tag ' + (rx.length ? 'rx' : 'gray') + '">처방약 ' + rx.length + '</span>' +
+      '<span class="fx-cap">' + listOr(rx, rxName) + '</span></div>' +
+    '<div class="fx-row gap-sm"><span class="tag ' + (state.supps.length ? 'suppl' : 'gray') + '">건강기능식품 ' + state.supps.length + '</span>' +
+      '<span class="fx-cap">' + listOr(state.supps, suppName) + '</span></div>' +
+    (state.age ? '<div class="fx-row gap-sm"><span class="tag gray">' + nameOf(AGE_LIST, state.age) + '</span>' +
+      '<span class="fx-cap">' + (realConds().length ? realConds().map(condName).join(' · ') : '해당 사항 없음') + '</span></div>' : '') +
+  '</div>';
+
+  /* 상호작용 카드 — 카드 수프가 아니라 한 장의 결과지로 묶는다 */
+  const findingsSection = res.findings.length
+    ? '<div class="section-title wf-anchor" id="findings">무엇이 문제인가요</div>' +
+      '<div class="findings">' + res.findings.map(findingCard).join('') + '</div>'
+    : '';
+
+  /* 복용 시간표 */
+  const sched = buildSchedule(res);
+  /* INFO_RULES 도 level:'warn' 을 가질 수 있어(임신 금기) f.supp 없는 warn 이 생긴다.
+     이 배너는 「이 건기식은 시간을 띄워도 소용없다」는 뜻이라 f.supp 가 있는 것만 대상이다. */
+  const warnSupps = res.findings.filter(function (f) { return f.level === 'warn' && f.supp; })
+    .map(function (f) { return suppName(f.supp); })
+    .filter(function (v, i, a) { return a.indexOf(v) === i; });
+
+  const timeSection = sched.length
+    ? '<div class="section-title wf-anchor" id="timetable">오늘부터 이렇게 먹어 보세요</div>' +
+      '<div class="fx-cap16">시간만 바꿔도 해결되는 것이 있습니다.</div>' +
+      '<div class="card" style="margin-top:8px">' +
+        '<div class="wf-time">' + sched.map(function (row) {
+          const plain = row.items.filter(function (it) { return !it.why; });
+          const moved = row.items.filter(function (it) { return it.why; });
+          return '<div class="tm-row">' +
+            '<div class="tm-when">' + row.slot.label + '<span>' + row.slot.time + '</span></div>' +
+            '<div class="tm-what">' +
+              (plain.length ? '<div class="n">' + plain.map(function (it) { return it.name; }).join(' · ') + '</div>' : '') +
+              moved.map(function (it) {
+                return '<div class="n">' + it.name + '</div><div class="why">' + it.why + '</div>';
+              }).join('') +
+            '</div></div>';
+        }).join('') + '</div>' +
+      '</div>' +
+      (warnSupps.length
+        ? '<div class="warn-banner caution" style="margin-top:16px">' + ico('i-alert-triangle') +
+          '<span>' + warnSupps.join(' · ') + eunNeun(warnSupps[warnSupps.length - 1]) +
+          ' 시간을 띄운다고 해소되는 항목이 아닙니다. 함께 먹는 것 자체를 진료 때 상의해주세요.</span></div>'
+        : '') +
+      '<div class="wf-disclaim" style="margin-top:16px"><b>복용 시간 제안은 일반적인 기준입니다.</b> ' +
+        '처방전에 적힌 복용법이 우선이며, 바꾸기 전에 약사에게 확인해 주세요.</div>'
+    : '';
+
+  /* 앱 비교 — 못 하는 것을 없는 척하지 않는다 */
+  const cmp = [
+    ['이번 조합 1회 분석', true],
+    ['가족 여러 명 저장', 'partial'],
+    ['가족이 각자 폰에서 보기', false],
+    ['결과 저장하고 다시 보기', 'partial'],
+    ['약이 바뀌면 자동으로 재확인', false],
+    ['복용 시간 알람', false],
+    ['약봉투 사진으로 자동 등록', false]
+  ].map(function (r) {
+    const web = r[1] === 'partial'
+      ? '<span class="cp-partial">△</span>'
+      : ico(r[1] ? 'i-check' : 'i-minus');
+    return '<div class="cp-row"><span class="cp-name">' + r[0] + '</span>' +
+      '<span class="cp-web">' + web + '</span>' +
+      '<span class="cp-app">' + ico('i-check') + '</span></div>';
+  }).join('');
+
+  const appSection =
+    '<div class="section-title wf-anchor" id="save">약은 계속 바뀝니다</div>' +
+    '<div class="card elevated fx-col gap-sm">' +
+      '<div class="fx-lead">오늘 결과는 <b>오늘 조합</b> 기준이에요. 약이 하나만 바뀌어도 결과가 달라집니다.</div>' +
+    '</div>' +
+    '<div class="section-title">웹에서 되는 것, 앱에서 되는 것</div>' +
+    '<div class="card"><div class="wf-compare">' +
+      '<div class="cp-row cp-head"><span class="cp-name"></span><span class="cp-web">웹</span><span class="cp-app">앱</span></div>' +
+      cmp +
+    '</div>' +
+    '<div class="fx-cap" style="margin-top:8px">△ = 이 브라우저에서만 됩니다. 기기를 바꾸면 사라집니다.</div></div>' +
+    '<div style="height:8px"></div>' +
+    '<button class="big-btn primary" data-act="app-soon">' + ico('i-smartphone') + '앱에서 계속 관리하기</button>' +
+    (state.appNotice
+      ? '<div class="warn-banner info">' + ico('i-alert-circle') +
+        '<span>앱 출시 후 연결됩니다. 아직 받으실 수 있는 앱이 없어 링크를 걸어 두지 않았습니다.</span></div>'
+      : '') +
+    /* 이 링크의 해시에는 약 목록·특이사항이 담긴다. 가족 모드에서는 렌더 자체를 하지 않는다. */
+    (state.activeId ? '' :
+      '<button class="big-btn secondary" data-act="copy-link">' + ico('i-share') + '내 결과 다시 볼 링크</button>' +
+      '<div class="fx-cap fx-center">이 링크에는 고르신 약·영양제가 담겨 있습니다. 남에게 보내지 마세요.</div>') +
+    (state.copyFallback
+      ? '<div class="fx-col gap-sm"><span class="fx-cap">브라우저가 복사를 막았습니다. 아래 주소를 직접 복사해주세요.</span>' +
+        '<input class="input" readonly value="' + esc(state.copyFallback) + '" onclick="this.select()"></div>'
+      : '');
+
+  return '<div class="screen-body gap-md stagger">' +
+    ctxBar() +
+    /* 1. 분석 직후 가장 먼저 보이는 것 = 유형. 결과를 「받는」 순간을 만들어 준다. */
+    typeReveal(t) +
+    '<div class="section-title first">공유할 결과 카드</div>' +
+    '<div class="fx-cap16">스크린샷으로 저장해서 스토리에 올려보세요.</div>' +
+    shareCard(res, m, k) +
+    '<button class="big-btn primary" data-act="share-card">' + ico('i-camera') + '스크린샷해서 공유하기</button>' +
+    '<button class="big-btn secondary" data-act="copy-service-link">' + ico('i-share') + '친구에게 링크 보내기</button>' +
+    '<div class="fx-cap fx-center">보내는 링크에는 고르신 약·영양제가 담기지 않습니다.</div>' +
+    '<div class="wf-sharehint">캡처한 카드는 진단이 아닙니다 — 참고용으로만 공유해주세요.</div>' +
+    '<div class="fx-divider"></div>' +
+    verdict +
+    dotGrid(res, k) +
+    typeNote(t) +
+    mechPanel(res) +
+    ackBlock() +
+    familySection(res) +
+    '<div class="section-title">확인한 것</div>' +
+    checked +
+    (res.findings.length
+      ? '<button class="big-btn primary" data-act="scrollto" data-target="findings">무엇이 문제인지 보기' + ico('i-arrow-down') + '</button>'
+      : '') +
+    findingsSection +
+    (sched.length && res.findings.length
+      ? '<button class="big-btn primary" data-act="scrollto" data-target="timetable">그럼 어떻게 먹어야 하나요?' + ico('i-arrow-down') + '</button>'
+      : '') +
+    timeSection +
+    coverageSection(res, missing) +
+    evLegend() +
+    '<div class="warn-banner caution">' + ico('i-repeat') +
+      '<span>약이 바뀌면 결과도 바뀝니다. 새 약을 받으시면 다시 확인해주세요.</span></div>' +
+    methodBox(res, m, k) +
+    '<div class="wf-disclaim">' + DISCLAIMER + '</div>' +
+    appSection +
+    '<div class="fx-divider"></div>' +
+    '<button class="big-btn ghost" data-act="restart">다른 조합으로 다시 해보기</button>' +
+    '<button class="big-btn secondary" data-act="to-family">' + ico('i-users') + '우리 가족 복용 점검</button>' +
+  '</div>';
+}
+
+
+/* ==========================================================================
+   7.1 리포트 조각 — 기전·근거·커버리지
+   ========================================================================== */
+
+/* 유형 노트: 판정보다 위로 올리지 않는다. 접힌 채로 44px 만 쓴다. */
+function typeNote(t) {
+  return '<details class="fold"><summary>이 유형에서 흔한 점검 지점</summary>' +
+    '<div class="fold-body">' + TYPE_NOTE[t.key] + '</div></details>';
+}
+
+function evBar(ev) {
+  if (!ev || !EVIDENCE[ev]) return '';
+  const E = EVIDENCE[ev];
+  let bars = '';
+  for (let i = 0; i < 3; i++) bars += '<i class="' + (i < E.bars ? 'on' : '') + '"></i>';
+  return '<span class="ev-bar">' + bars + '<em>근거 ' + E.label + '</em></span>';
+}
+
+/* 쉬운 말이 먼저, 전문용어는 뒤 괄호. 이 순서를 뒤집지 않는다. */
+function mechChips(f) {
+  const ids = (f.mech || []).filter(function (v, i, a) { return a.indexOf(v) === i; });
+  const shown = ids.slice(0, 2).map(function (id) {
+    const M = mechOf(id); if (!M) return '';
+    const F = MECH_FAMILIES.filter(function (x) { return x.id === M.fam; })[0];
+    return '<span class="mech-chip">' + ico(F ? F.icon : 'i-file-text', 'fx-ico sm') + M.plain +
+      '<em class="mc-term">(' + M.term + ')</em></span>';
+  }).join('');
+  return shown + (ids.length > 2 ? '<span class="mech-chip">+' + (ids.length - 2) + '</span>' : '');
+}
+
+function findingCard(f) {
+  const L = LEVELS[f.level];
+  const meta = mechChips(f) + evBar(f.ev);
+  const detail = (f.mech || []).map(function (id) { const M = mechOf(id); return M ? M.detail : ''; })
+    .filter(Boolean).slice(0, 2).join(' ');
+  const via = (f.via || []).filter(function (v, i, a) { return a.indexOf(v) === i; })
+    .map(ingName).join(' · ');
+  const why = detail
+    ? '<details class="f-why"><summary>왜 그런가요</summary>' +
+        '<p class="fw-detail">' + detail + '</p>' +
+        (via ? '<p class="fw-via"><b>이 판정을 만든 성분</b> — ' + via + '</p>' : '') +
+      '</details>'
+    : '';
+  return '<div class="wf-find ' + L.cls + '">' +
+    (f.rule ? '<span class="f-rule">' + esc(f.rule).toUpperCase() + '</span>' : '') +
+    '<span class="f-lv">' + ico(L.icon, 'fx-ico sm') + L.label + '</span>' +
+    '<div class="wf-pair">' + f.pair.map(function (p, i) {
+      return (i ? '<span class="p-x">×</span>' : '') + p;
+    }).join('') + '</div>' +
+    (meta ? '<div class="f-meta">' + meta + '</div>' : '') +
+    '<div class="f-what">' + f.what + '</div>' +
+    '<div class="f-do">' + ico(L.doIcon) + '<span>' + f.how + '</span></div>' +
+    why +
+    (f.derived ? '<span class="f-stamp">성분 특성에서 자동 도출 · 약사 검수 전</span>' : '') +
+  '</div>';
+}
+
+/* 이 조합에서 겹치는 작용 특성. 계열 구분은 아이콘 모양으로만 한다 — 색은 심각도 전용. */
+function mechPanel(res) {
+  const prof = res.prof || {};
+  const hit = [], solo = [];
+  MECH_FAMILIES.forEach(function (F) {
+    MECHANISMS.filter(function (M) { return M.fam === F.id; }).forEach(function (M) {
+      const es = prof[M.id]; if (!es) return;
+      const entries = uniqItems(es);
+      const items = entries.map(function (e) { return e.item; });
+      /* 항목마다 근거 수준을 따로 붙인다. 이걸 빼면 「확립」 성분과 「이론적」 성분이
+         한 줄에 나란히 놓여, 근거가 약한 쪽까지 같은 무게로 읽힌다.
+         (예: 최기형성 행에서 이소트레티노인=확립 과 종합비타민의 비타민A=제한적) */
+      const row = '<div class="mp-row' + (items.length >= 2 ? ' hit' : '') + '">' +
+        '<div class="mp-head">' + ico(F.icon, 'fx-ico sm') +
+          '<span>' + M.plain + ' <span class="mp-term">(' + M.term + ')</span></span>' +
+          '<span class="mp-n num">' + items.length + '개</span>' +
+        '</div>' +
+        '<div class="mp-items">' + entries.map(function (e) {
+          return '<span class="mp-item">' + itemLabel(e.item) +
+                 '<span class="mp-ev">' + EVIDENCE[e.ev].label + '</span></span>';
+        }).join('') + '</div>' +
+        /* derive:'none' 은 조치 카드를 만들지 않는다. 조치 없이 위험 이름만 크게 남으면
+           사용자가 스스로 끊는 판단을 할 수 있어, 무엇을 해야 하는지 한 줄을 반드시 붙인다. */
+        (M.derive === 'none'
+          ? '<div class="mp-note">이 특성은 해당되는 상황(임신·간·신장 기능 등)에서만 문제가 됩니다. ' +
+            '스스로 판단해 끊지 마시고, 해당되신다면 이 목록을 진료 때 그대로 보여 주세요.</div>'
+          : '') +
+      '</div>';
+      (items.length >= 2 ? hit : solo).push(row);
+    });
+  });
+
+  const body = hit.length
+    ? hit.join('')
+    : '<div class="fx-col gap-sm">' +
+        '<div class="t-emph">겹치는 작용 특성이 확인되지 않았습니다.</div>' +
+        '<div class="fx-cap16">이 목록에 없다는 것이, 서로 영향이 없다는 뜻은 아닙니다. ' +
+        '아래 「무엇을 확인하지 못했나요」를 꼭 읽어 주세요.</div>' +
+      '</div>';
+
+  const soloBlock = solo.length
+    ? '<details class="fold" style="margin-top:12px"><summary>지금은 겹치지 않는 작용 특성 ' + solo.length + '가지</summary>' +
+        '<div class="fold-body">' + solo.join('') +
+        '<div class="fx-cap" style="margin-top:8px">지금은 항목이 하나뿐이라 겹치지 않습니다. 약이 하나 늘면 여기가 먼저 걸립니다.</div>' +
+      '</div></details>'
+    : '';
+
+  return '<div class="section-title">이 조합에서 겹치는 작용 특성</div>' +
+    '<div class="card fx-col">' + body + soloBlock + mechMap(res) +
+      '<div class="mp-stamp">성분·작용 특성 매핑은 <b>검수 전 예시 데이터</b>입니다. 약사 검수 후 확정됩니다.</div>' +
+    '</div>';
+}
+
+/* 성분 지도 — 항목명이 실리므로 리포트 본문 전용. 공유 카드에 넣지 않는다. */
+function mechMap(res) {
+  const prof = res.prof || {};
+  const items = realRx().concat(state.supps);
+  if (!items.length) return '';
+  const cols = Object.keys(prof).map(function (id) {
+    return { id: id, M: mechOf(id), n: uniqItems(prof[id]).length };
+  }).filter(function (c) { return !!c.M; })
+    .sort(function (a, b) { return b.n - a.n; })
+    .slice(0, 6);
+  if (!cols.length) return '';
+
+  const head = '<tr><th class="colh"></th>' + cols.map(function (c) {
+    return '<th class="colh' + (c.n >= 2 ? ' hit' : '') + '">' + c.M.term + '</th>';
+  }).join('') + '</tr>';
+
+  const body = items.map(function (it) {
+    return '<tr><th class="rowh">' + itemLabel(it) + '</th>' + cols.map(function (c) {
+      const es = prof[c.id].filter(function (e) { return e.item === it; });
+      const cell = es.length
+        ? '<span class="mx-dot' + (es.every(function (e) { return e.dir < 0; }) ? ' rev' : '') + '"></span>'
+        : '';
+      return '<td class="' + (c.n >= 2 ? 'hit' : '') + '">' + cell + '</td>';
+    }).join('') + '</tr>';
+  }).join('');
+
+  return '<details class="fold" style="margin-top:12px"><summary>성분별로 보기</summary>' +
+    '<div class="fold-body">' +
+      '<div class="mx-wrap"><table class="mx-grid"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
+      '<div class="mx-legend">● 그 작용 특성을 가진 항목 · ○ 반대 방향으로 작용하는 항목. ' +
+      '점이 둘 이상인 열이 「겹치는 것」입니다.</div>' +
+    '</div></details>';
+}
+
+/* ---------- 커버리지 ---------- */
+const COV_SEEN = [
+  '고르신 항목의 대표 성분 목록',
+  '각 성분의 알려진 작용 특성',
+  '항목 사이에 적용되는 상호작용 규칙'
+];
+function coverageMissing(res) {
+  const prof = (res && res.prof) || {};
+  const miss = [
+    '하루에 얼마나 드시는지(용량)',
+    '실제로 몇 시에, 몇 시간 간격으로 드시는지',
+    '같은 이름이라도 제품마다 다른 함량',
+    '진단받으신 질환 전체',
+    '간·신장 기능 수치',
+    '사람마다 다른 대사 능력(유전적 차이)'
+  ];
+  /* 아래는 「이 사람 조합을 실제로 읽었다」는 신호다 — 조합에 따라 붙는다. */
+  if (prof.cyp) miss.push('간의 분해 효소는 사람마다 활성이 크게 다릅니다(CYP2C19·CYP2D6 유전 다형성). 같은 조합도 사람에 따라 결과가 달라집니다.');
+  if (prof.chelate || prof.gastricph) miss.push('지금 실제로 몇 시간 간격을 두고 드시는지는 반영하지 않았습니다.');
+  if (prof.bleed) miss.push('평소 멍이 잘 드는지, 수술·시술·발치 예정이 있는지는 반영하지 않았습니다.');
+  if (prof.fatload) miss.push('각 제품에 든 실제 함량과, 식사로 드시는 양은 반영하지 않았습니다.');
+  if (realConds().length === 0) miss.push('기저질환을 「해당 없음」으로 두셨습니다. 진단받으신 것이 있으면 결과가 달라집니다.');
+  if (state.customs.length) miss.push('직접 입력하신 항목: <b>' + state.customs.map(esc).join(' · ') + '</b>');
+  miss.push('이 리포트가 대조한 성분은 <b>' + ingredientCount() + '개</b>입니다. 실제 제품에는 이 목록에 없는 성분도 들어 있습니다.');
+  return miss;
+}
+
+function coverageSection(res, missing) {
+  const total = COV_SEEN.length + missing.length;
+  let meter = '';
+  for (let i = 0; i < total; i++) meter += '<i class="' + (i < COV_SEEN.length ? 'on' : '') + '"></i>';
+  const item = function (html) {
+    return '<div class="cov-item">' + ico('i-alert-circle', 'fx-ico sm') + '<span class="grow">' + html + '</span></div>';
+  };
+  return '<div class="section-title wf-anchor" id="notchecked">무엇을 확인하지 못했나요</div>' +
+    '<div class="card fx-col gap-sm">' +
+      '<div class="cov-meter">' + meter + '</div>' +
+      '<div class="t-emph"><span class="num">' + total + '</span>가지 중 <span class="num">' + COV_SEEN.length + '</span>가지만 봤습니다</div>' +
+      '<div class="fx-cap">칸 수는 목록의 개수일 뿐, 정확도 비율이 아닙니다.</div>' +
+      '<div class="cov-sub">본 것</div>' +
+      '<div class="cov-list">' + COV_SEEN.map(item).join('') + '</div>' +
+      '<div class="cov-sub">보지 못한 것</div>' +
+      '<div class="cov-list">' + missing.map(item).join('') + '</div>' +
+    '</div>';
+}
+
+/* 근거 수준은 위험도와 독립된 축이다. 마지막 한 줄을 반드시 남긴다. */
+function evLegend() {
+  const rows = ['established', 'limited', 'theoretical'].map(function (key) {
+    const E = EVIDENCE[key];
+    return '<div class="ev-row">' + evBar(key).replace('<em>근거 ' + E.label + '</em>', '') +
+      '<b>' + E.label + '</b><span>' + E.desc + '</span></div>';
+  }).join('');
+  return '<div class="card fx-col gap-sm">' +
+    '<div class="mt-eyebrow">EVIDENCE</div>' +
+    '<div class="ev-legend">' + rows + '</div>' +
+    '<div class="fx-cap">근거 수준은 이 상호작용이 얼마나 잘 알려졌는지를 말합니다. 얼마나 위험한지를 말하지 않습니다.</div>' +
+  '</div>';
+}
+
+/* 회의록 §7 의 분석 흐름을 사용자가 읽을 수 있는 형태로 옮긴 블록.
+   「AI 가 자유롭게 판단하는 것이 아니라 데이터 + 규칙 → 결과 → 표현」. */
+function methodBox(res, m, k) {
+  const now = new Date();
+  const p = function (n) { return (n < 10 ? '0' : '') + n; };
+  const stamp = now.getFullYear() + '-' + p(now.getMonth() + 1) + '-' + p(now.getDate()) +
+                ' ' + p(now.getHours()) + ':' + p(now.getMinutes());
+  const steps = [
+    '고르신 항목 ' + m + '개를 확인했습니다',
+    '각 항목의 대표 성분 ' + ingredientCount() + '개를 펼쳤습니다',
+    '각 성분의 알려진 작용 특성 ' + mechCount() + '가지를 확인했습니다',
+    '성분 사이에 적용되는 규칙 ' + ruleCount() + '개를 대조했습니다',
+    '위험 수준을 매기고 문장으로 옮겼습니다'
+  ].map(function (t, i) {
+    return '<div class="mt-step"><b>' + (i + 1) + '</b><span>' + t + '</span></div>';
+  }).join('');
+
+  return '<div class="mt-box">' +
+    '<div class="mt-eyebrow">METHOD</div>' +
+    '<div style="font-weight:700;color:var(--ink);margin-bottom:6px">이 결과는 어떻게 나왔나요</div>' +
+    steps +
+    '<div class="mt-note">이 순서는 조합마다 똑같습니다. 결과는 정해진 규칙에서 나오며, 매번 다르게 만들어 내지 않습니다.</div>' +
+    '<dl class="mt-dl">' +
+      '<dt>규칙셋</dt><dd>v0.3 · 검수 전</dd>' +
+      '<dt>대조 쌍</dt><dd>' + k + '건</dd>' +
+      '<dt>적용 규칙</dt><dd>' + res.nCurated + '건 / 자동 도출 ' + res.nDerived + '건</dd>' +
+      '<dt>판정 시각</dt><dd>' + stamp + '</dd>' +
+    '</dl>' +
+    '<div class="mt-note">이 결과는 진단이 아닙니다. 규칙셋은 약사 검수 전 예시 데이터입니다.</div>' +
+  '</div>';
+}
+
+
+/* ==========================================================================
+   7.2 가족 — 밖으로 나가는 것은 데이터가 0인 초대장 한 장뿐이다
+   ========================================================================== */
+
+/* 지금 누구 것을 입력·조회하고 있는지 항상 보이게 한다. */
+function ctxBar() {
+  if (!state.activeId) return '';
+  const mm = findMember(state.activeId); if (!mm) return '';
+  return '<div class="fm-ctx">' + ico('i-users', 'fx-ico sm') +
+    '<span class="fm-ctx-t">지금 입력 중 · <b>' + esc(mm.label) + '</b></span>' +
+    '<button class="fm-ctx-x" data-act="ctx-mine">내 것으로 돌아가기</button></div>';
+}
+
+/* 초대로 들어온 사람에게만 보이는 반송 블록. 왕복이 원 발신자의 재방문을 만든다. */
+function ackBlock() {
+  if (!state.fromInvite) return '';
+  return '<div class="card elevated fx-col gap-sm">' +
+    '<div class="fx-lead">확인 부탁하신 분께 알려드릴까요?</div>' +
+    '<div class="fx-cap">보내는 메시지에는 어떤 약을 고르셨는지 담기지 않습니다.</div>' +
+    '<button class="big-btn primary" data-act="open-invite" data-target="ack">확인했다고 알려주기</button>' +
+  '</div>';
+}
+
+/* 위치는 기전 패널 직후 — 판정 → 겹치는 작용 → 가족 요청 순서.
+   근거를 보기 전에 요청하면 광고로 읽힌다. */
+function familySection(res) {
+  const lead = res.n > 0
+    ? '내 조합에서도 <b>' + res.n + '건</b>이 나왔어요. 약을 여러 개 드시는 분일수록 겹치는 조합이 늘어납니다.'
+    : '이번엔 확인된 신호가 없었지만, 드시는 약이 늘면 대조할 조합도 늘어납니다.';
+  const slots = ['mother', 'father', 'spouse'].map(function (rel) {
+    const R = REL_LIST.filter(function (x) { return x.id === rel; })[0];
+    return '<div class="fm-slot"><span class="fm-label">' + R.label + '</span>' +
+      '<div class="fm-slot-btns">' +
+        '<button class="big-btn secondary sm" data-act="add-member" data-rel="' + rel + '">' +
+          ico('i-user-plus', 'fx-ico sm') + '내가 대신 입력</button>' +
+        '<button class="big-btn ghost sm" data-act="open-invite" data-target="' +
+          (rel === 'spouse' ? 'peer' : 'parent') + '">' + ico('i-send', 'fx-ico sm') + '물어보기</button>' +
+      '</div></div>';
+  }).join('');
+
+  return '<div class="section-title">부모님은 몇 가지나 드시나요?</div>' +
+    '<div class="card fx-col gap-md">' +
+      '<div class="fx-lead">' + lead + '</div>' +
+      '<div class="fm-slots">' + slots + '</div>' +
+      '<button class="big-btn primary" data-act="to-family">' + ico('i-users') + '우리 가족 복용 점검 열기</button>' +
+      '<div class="fx-cap">가족 정보는 이 브라우저에만 저장되고 서버로 보내지 않습니다.</div>' +
+    '</div>';
+}
+
+/* 화면 설명용 예시 데이터. 실제 사용자 데이터가 아니며 저장되지도 않는다. */
+const DEMO_MEMBERS = [
+  { rel: 'mother', label: '예시 · 어머니', typeKey: 'basic',   nSupp: 4, nRx: 2, checkedAt: '2026. 8. 14.' },
+  { rel: 'father', label: '예시 · 아버지', typeKey: 'minimal', nSupp: 2, nRx: 3, checkedAt: '아직' }
+];
+
+function renderFamily() {
+  const real = state.members;
+
+  /* 보드에서 비교하는 축은 「건수」가 아니라 「상태」다. 건수를 나란히 놓으면
+     순위표로 읽히고 「엄마 0건 = 문제 없음」이 되어 P4 원칙이 무너진다. */
+  const rows = real.map(function (mm) {
+    const t = typeOfSupps(mm.supps);
+    const rxN = mm.rx.filter(function (id) { return id !== 'none'; }).length;
+    /* 삭제 버튼을 행 안에 중첩하면 button 안의 button 이 되므로 행을 감싼다.
+       개별 삭제가 없으면 오탭으로 생긴 빈 구성원을 「전체 삭제」로만 지울 수 있다. */
+    return '<div class="fm-item">' +
+      '<button class="fm-row" data-act="open-member" data-id="' + esc(mm.id) + '">' +
+        '<span class="fm-main">' +
+          '<span class="fm-label">' + esc(mm.label) + '</span>' +
+          '<span class="fm-meta">영양제 ' + mm.supps.length + ' · 처방약 ' + rxN + '</span>' +
+        '</span>' +
+        '<span class="fm-type">' + TYPES[t.key].name + '</span>' +
+        '<span class="fm-when">' + (mm.savedAt
+          ? '<span class="fm-done">' + ico('i-check') + '확인함</span><span>' + esc(mm.savedAt) + '</span>'
+          : '아직') + '</span>' +
+        ico('i-chevron-right', 'fx-ico sm') + '</button>' +
+      '<button class="fm-del" data-act="del-member" data-id="' + esc(mm.id) + '" ' +
+        'aria-label="' + esc(mm.label) + ' 삭제">' + ico('i-x', 'fx-ico sm') + '</button>' +
+    '</div>';
+  }).join('');
+
+  const notice = '<div class="card fx-col gap-sm">' +
+      '<div class="fx-row top gap-sm">' + ico('i-alert-circle', 'fx-ico sm t-secondary') +
+      '<span class="fx-cap grow">' + (state.storeOk
+        ? '이 브라우저에만 저장되고 서버로 보내지 않습니다. 다른 기기에서는 보이지 않습니다.'
+        : '이 브라우저에서는 저장되지 않습니다. 창을 닫으면 사라집니다.') + '</span></div>' +
+      (real.length
+        ? '<button class="big-btn ghost sm" data-act="wipe-all">' + ico('i-trash', 'fx-ico sm') +
+          '저장한 내용 모두 지우기</button>' : '') +
+    '</div>';
+
+  /* 빈 보드는 「이걸로 뭘 하는지」를 못 알려주므로 예시가 필요하다. 다만 가짜 데이터라
+     5중으로 표시한다: 별도 섹션 · 헤더 고지 · 해칭 배경 · 「예시」 배지 · 라벨 접두. */
+  const demo = real.length <= 1
+    ? '<div class="section-title">이렇게 보입니다</div>' +
+      '<div class="fx-cap">아래는 화면 설명용 예시입니다. 실제 가족 정보가 아닙니다.</div>' +
+      '<div class="fm-demo" style="margin-top:8px">' + DEMO_MEMBERS.map(function (d) {
+        return '<button class="fm-row" data-act="demo-locked">' +
+          '<span class="fm-main">' +
+            '<span class="fm-label">' + d.label + '</span>' +
+            '<span class="fm-meta">영양제 ' + d.nSupp + ' · 처방약 ' + d.nRx + '</span>' +
+          '</span>' +
+          '<span class="fm-badge">예시</span>' +
+          '<span class="fm-type">' + TYPES[d.typeKey].name + '</span>' +
+          '<span class="fm-when">' + d.checkedAt + '</span></button>';
+      }).join('') + '</div>'
+    : '';
+
+  const slots = ['mother', 'father', 'spouse'].map(function (rel) {
+    const R = REL_LIST.filter(function (x) { return x.id === rel; })[0];
+    return '<div class="fm-slot"><span class="fm-label">' + R.label + '</span>' +
+      '<div class="fm-slot-btns">' +
+        '<button class="big-btn secondary sm" data-act="add-member" data-rel="' + rel + '">' +
+          ico('i-user-plus', 'fx-ico sm') + '내가 대신 입력</button>' +
+        '<button class="big-btn ghost sm" data-act="open-invite" data-target="' +
+          (rel === 'spouse' ? 'peer' : 'parent') + '">' + ico('i-send', 'fx-ico sm') +
+          '뭘 드시는지 물어보기</button>' +
+      '</div></div>';
+  }).join('');
+
+  return '<div class="screen-body gap-md">' +
+    '<button class="big-btn ghost sm" data-act="back">' + ico('i-chevron-left', 'fx-ico sm') + '돌아가기</button>' +
+    '<div class="t-title">우리 가족 복용 점검</div>' +
+    '<div class="fx-cap16">이 기기에 저장한 사람만 보입니다.</div>' +
+    notice +
+    (real.length ? '<div class="fm-list">' + rows + '</div>' : '') +
+    demo +
+    '<div class="section-title">누구를 확인해 볼까요</div>' +
+    '<div class="fm-slots">' + slots + '</div>' +
+    '<button class="big-btn ghost sm" data-act="add-member" data-rel="other">' +
+      ico('i-plus', 'fx-ico sm') + '다른 가족 추가</button>' +
+    '<div class="fx-divider"></div>' +
+    '<button class="big-btn secondary" data-act="ctx-mine">나도 다시 확인하기</button>' +
+    '<div class="wf-disclaim">' + DISCLAIMER + '</div>' +
+  '</div>';
+}
+
+
+/* ==========================================================================
+   7.3 초대 — 문구 프리셋이 발송률의 최대 레버다. 링크만 주면 「뭐라고 보내지?」에서 멈춘다.
+   ========================================================================== */
+/* 30·40대가 실제로 카톡에 붙여넣을 만한 문장. 억지스러우면 아무도 안 보낸다.
+   수정 시 금지 문구(괜찮습니다 / 끊으세요 / 중단하세요 등)가 들어가지 않게 주의할 것. */
+const INVITE_MSGS = {
+  parent: [
+    { id:'p1', t:'엄마, 이거 눌러서 지금 드시는 약이랑 영양제 골라봐요. 1분이면 나와요.' },
+    { id:'p2', t:'아빠, 홍삼이랑 약이랑 같이 드셔도 되는지 확인하는 거예요. 한번 해보세요.' },
+    { id:'p3', t:'저 해봤는데 두 개 겹친다고 나오네요. 엄마도 한번 해보세요.' },
+    { id:'p4', t:'엄마 지금 드시는 약 봉투랑 영양제 통 사진 좀 찍어서 보내주세요. 제가 확인해볼게요.', noLink:true }
+  ],
+  peer: [
+    { id:'f1', t:'이거 해봐. 나 영양제 두 개 시간 겹친다고 나옴.' },
+    { id:'f2', t:'우리 먹는 거 겹치는 거 있나 한번 돌려봐.' },
+    { id:'f3', t:'너 요즘 영양제 뭐 먹어? 이거 1분이면 나온대.' }
+  ],
+  ack: [
+    { id:'a1', t:'해봤어. 결과 나왔는데 이따 보여줄게.' },
+    { id:'a2', t:'확인했어요. 시간 나눠서 먹으라는 게 있네요.' },
+    { id:'a3', t:'골라봤어요. 나중에 같이 봐요.' }
+  ]
+};
+const INVITE_TABS = [
+  { id: 'parent', label: '부모님' },
+  { id: 'peer',   label: '배우자·친구' }
+];
+
+function msgOf(target, id) {
+  return (INVITE_MSGS[target] || []).filter(function (o) { return o.id === id; })[0];
+}
+function openInvite(target) {
+  const list = INVITE_MSGS[target] || INVITE_MSGS.peer;
+  state.invite = { target: target, msgId: list[0].id, text: list[0].t };
+  if (state.sheet === 'invite') { render(); return; }
+  go(state.screen, { sheet: 'invite', keepScroll: true });
+}
+function sendInvite() {
+  const msg = state.invite.text;
+  const pick = msgOf(state.invite.target, state.invite.msgId);
+  const url = (pick && pick.noLink) ? '' : inviteUrl();   /* 정보 요청 문구엔 링크를 붙이지 않는다 */
+  if (navigator.share) {
+    navigator.share(url ? { title: '모두의 복약', text: msg, url: url } : { text: msg })
+      .catch(function () { /* 사용자가 닫은 것 */ });
+    return;
+  }
+  copyText(url ? (msg + '\n' + url) : msg, '문구를 복사했습니다. 카톡에 붙여넣어 주세요.');
+}
+
+
+/* ==========================================================================
+   8. 렌더 — 화면 하나당 함수 하나
+   ========================================================================== */
+/* 3040 변형: profile 화면이 없다 — renderRx() 에 합쳐졌다 (stepsBar 주석 참고). */
+const RENDERERS = {
+  landing: renderLanding,
+  supp: renderSupp,
+  rx: renderRx,
+  search: renderSearch,
+  cam: renderCam,
+  ocr: renderOcr,
+  analyzing: renderAnalyzing,
+  report: renderReport,
+  family: renderFamily
+};
+
+function render() {
+  app.innerHTML = RENDERERS[state.screen]();
+  sheetRoot.innerHTML = renderSheet();
+  document.body.style.overflow = state.sheet ? 'hidden' : '';
+  if (state.sheet === 'custom') {
+    const el = document.getElementById('custom-input');
+    if (el) el.focus();
+  }
+  if (state.sheet === 'invite') {
+    /* 커서를 문구 끝에 둔다. 값 자체는 input 이벤트가 state 에만 쓰고 재렌더하지 않는다. */
+    const ta = document.getElementById('invite-text');
+    if (ta) ta.setSelectionRange(ta.value.length, ta.value.length);
+  }
+  if (state.screen === 'search') {
+    const q = document.getElementById('q');
+    if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+  }
+}
+
+
+/* ==========================================================================
+   9. 동작
+   ========================================================================== */
+
+/* '없어요'/'해당 없음' 은 나머지와 배타 (SPEC §3) */
+function toggleExclusive(arr, id, noneId) {
+  if (id === noneId) return has(arr, noneId) ? [] : [noneId];
+  const next = arr.filter(function (x) { return x !== noneId; });
+  return has(next, id) ? next.filter(function (x) { return x !== id; }) : next.concat([id]);
+}
+
+let analyzeToken = 0;
+function startAnalyze() {
+  const token = ++analyzeToken;
+  state.step = 0;
+  go('analyzing');
+  const stepAt = function (ms, n) {
+    setTimeout(function () {
+      if (token !== analyzeToken || state.screen !== 'analyzing') return;
+      state.step = n;
+      render();
+    }, ms);
+  };
+  /* v2: 회의록 §7 의 분석 흐름 5단계를 그대로 보여준다. 2.2초 · 균등 간격. */
+  stepAt(440, 1);
+  stepAt(880, 2);
+  stepAt(1320, 3);
+  stepAt(1760, 4);
+  setTimeout(function () {
+    if (token !== analyzeToken || state.screen !== 'analyzing') return;
+    /* 가족 구성원의 입력은 이 시점에 저장한다. 「나」의 입력은 저장하지 않는다. */
+    if (state.activeId) {
+      const mm = findMember(state.activeId);
+      if (mm) { Object.assign(mm, currentData());
+                mm.savedAt = new Date().toLocaleDateString('ko-KR'); saveMembers(); }
+    }
+    /* 분석 화면은 히스토리에서 리포트로 덮어쓴다. 리포트에서 뒤로가면
+       분석이 다시 돌지 않고 곧장 이전(처방약+기본정보) 화면으로 돌아가야 하기 때문. */
+    go('report', { replace: true });
+  }, 2200);
+}
+
+/* 남에게 줄 링크는 「내 결과」가 아니라 「이 서비스」다.
+   reportUrl() 의 해시에는 r=처방약 · s=건기식 · a=연령 · c=특이사항(임신·수유 포함)이
+   그대로 인코딩돼 있어, 공개적으로 뿌리면 민감정보가 URL 로 새어 나간다.
+   본인이 결과를 다시 열기 위한 용도(copyLink)와 공유 용도(copyServiceLink)를 분리한다. */
+function copyText(text, okMsg, onFail) {
+  const done = function () { toast(okMsg); };
+  const fail = onFail || function () { /* 조용히 실패 */ };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(function () { legacyCopy(text, done, fail); });
+  } else {
+    legacyCopy(text, done, fail);
+  }
+}
+function copyServiceLink() { copyText(location.href.split('#')[0], '링크를 복사했습니다'); }
+function copyLink() {
+  const url = reportUrl();
+  copyText(url, '복사했습니다', function () { state.copyFallback = url; render(); });
+}
+function legacyCopy(text, done, fail) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:-1000px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    ok ? done() : fail();
+  } catch (e) { fail(); }
+}
+
+/* 첫 구성원 저장 직전 1회 동의. 저장이 아예 안 되는 브라우저면 물을 것이 없다. */
+let pendingAfterAck = null;
+let runAfterPop = null;
+function requireAck(next) {
+  if (state.storeAck || !state.storeOk) { next(); return; }
+  pendingAfterAck = next;
+  go('family', { sheet: 'consent', keepScroll: true });
+}
+
+function resetState() {
+  state.rx = []; state.supps = []; state.customs = []; state.age = null;
+  state.conds = []; state.q = ''; state.ocrPick = OCR_DEMO.map(function (o) { return o.sure; });
+}
+
+const ACTIONS = {
+  start:      function () { go('supp'); },
+  back:       function () { history.back(); },
+  'to-search':function () { go('search'); },
+  'to-cam':   function () { go('cam'); },
+  'to-ocr':   function () { go('ocr'); },
+  'to-rx':    function () { go('rx'); },
+  analyze:    function () { startAnalyze(); },
+  restart:    function () { switchTo(null); resetState(); go('landing'); },
+  'to-family':    function () { go('family'); },
+  'add-member':   function (el) { const rel = el.dataset.rel; requireAck(function () { addMember(rel); }); },
+  /* 입력이 없는 대상을 리포트로 보내면 한 번도 입력하지 않은 사람에게
+     「확인된 주의 신호 없음」 판정을 띄우게 된다 — P4 가 가장 나쁘게 깨지는 자리다.
+     비어 있으면 입력 화면으로 보낸다. */
+  'open-member':  function (el) { switchTo(el.dataset.id); go(itemCount() ? 'report' : 'supp'); },
+  'ctx-mine':     function () { switchTo(null); go(itemCount() ? 'report' : 'supp'); },
+  'demo-locked':  function () { toast('화면 설명용 예시라 열 수 없어요'); },
+  'del-member':   function (el) {
+    const id = el.dataset.id, m = findMember(id);
+    if (!m) return;
+    /* 보고 있던 구성원을 지우면 그 데이터가 화면에 남아 「나」로 오인될 수 있다.
+       반드시 「나」로 되돌린 뒤 제거한다(wipeAll 과 같은 이유). */
+    if (state.activeId === id) {
+      state.activeId = null;
+      loadData(mineSnapshot || { rx: [], supps: [], age: null, conds: [], customs: [] });
+    }
+    state.members = state.members.filter(function (x) { return x.id !== id; });
+    saveMembers(); toast(m.label + ' 정보를 지웠습니다'); render();
+  },
+  'wipe-all':     function () { wipeAll(); },
+  'open-invite':  function (el) { openInvite(el.dataset.target); },
+  'inv-tab':      function (el) { openInvite(el.dataset.target); },
+  'pick-msg':     function (el) {
+    const pick = msgOf(state.invite.target, el.dataset.id);
+    if (!pick) return;
+    state.invite.msgId = pick.id; state.invite.text = pick.t; render();
+  },
+  'send-invite':  function () { sendInvite(); },
+  'copy-invite':  function () { copyText(state.invite.text + '\n' + inviteUrl(), '복사했습니다'); },
+  'copy-invite-link': function () { copyText(inviteUrl(), '링크를 복사했습니다'); },
+  /* 동의 → 시트를 닫고(뒤로가기) 나서 원래 하려던 일을 이어서 한다.
+     history.back() 은 비동기라, next() 를 여기서 바로 부르면 뒤이어 도착한
+     popstate 가 화면을 동의 시트 직전으로 되돌려 버린다. popstate 뒤에 실행한다. */
+  'ack-store':    function () {
+    state.storeAck = true; storeSet(KEY_A, '1');
+    runAfterPop = pendingAfterAck; pendingAfterAck = null;
+    history.back();
+    /* pushState 가 막힌 환경(file://)에서는 popstate 가 오지 않는다 — 그때의 보루. */
+    setTimeout(function () {
+      if (!runAfterPop) return;
+      const n = runAfterPop; runAfterPop = null;
+      state.sheet = null; render(); n();
+    }, 400);
+  },
+  'big-text':     function () {
+    state.bigText = !state.bigText;
+    document.documentElement.classList.toggle('big-text', state.bigText);
+    render();
+  },
+  'share-card': function () {
+    toast('이 카드를 캡처해 공유해주세요');
+    /* url 은 서비스 주소만 넘긴다. reportUrl() 을 넘기면 약 목록·특이사항이 링크에 실린다. */
+    if (navigator.share) {
+      navigator.share({
+        title: '모두의 복약',
+        text: '내가 먹는 약이랑 영양제 조합, 1분이면 확인돼요',
+        url: location.href.split('#')[0]
+      }).catch(function () {});
+    }
+  },
+
+  'rx-toggle': function (el) {
+    state.rx = toggleExclusive(state.rx, el.dataset.id, 'none');
+    render();
+  },
+  'supp-toggle': function (el) {
+    const id = el.dataset.id;
+    state.supps = has(state.supps, id)
+      ? state.supps.filter(function (x) { return x !== id; })
+      : state.supps.concat([id]);
+    render();
+  },
+  age:  function (el) { state.age = el.dataset.id; render(); },
+  cond: function (el) { state.conds = toggleExclusive(state.conds, el.dataset.id, 'none'); render(); },
+
+  'open-custom':  function () { go('supp', { sheet: 'custom', keepScroll: true }); },
+  'close-sheet':  function () { history.back(); },
+  'del-custom':   function (el) { state.customs.splice(Number(el.dataset.i), 1); render(); },
+
+  'pick-drug': function (el) {
+    const d = DRUG_SEARCH[Number(el.dataset.i)];
+    if (!has(state.rx, d.rx)) state.rx = toggleExclusive(state.rx, d.rx, 'none');
+    toast(d.name + ' → ' + rxName(d.rx) + '으로 담았습니다');
+    render();
+  },
+  'ocr-toggle': function (el) {
+    const i = Number(el.dataset.i);
+    state.ocrPick[i] = !state.ocrPick[i];
+    render();
+  },
+  'ocr-confirm': function () {
+    OCR_DEMO.forEach(function (o, i) {
+      if (state.ocrPick[i] && !has(state.rx, o.rx)) state.rx = toggleExclusive(state.rx, o.rx, 'none');
+    });
+    const n = state.ocrPick.filter(Boolean).length;
+    go('rx');
+    toast(n + '개를 담았습니다');
+  },
+
+  scrollto: function (el) {
+    const t = document.getElementById(el.dataset.target);
+    if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  },
+  'app-soon':  function () { state.appNotice = true; render(); },
+  'copy-link': function () { copyLink(); },
+  'copy-service-link': function () { copyServiceLink(); }
+};
+
+document.addEventListener('click', function (e) {
+  const el = e.target.closest('[data-act]');
+  if (!el || el.tagName === 'FORM') return;
+  const fn = ACTIONS[el.dataset.act];
+  if (!fn) return;
+  e.preventDefault();
+  fn(el);
+});
+
+document.addEventListener('submit', function (e) {
+  const el = e.target.closest('[data-act="add-custom"]');
+  if (!el) return;
+  e.preventDefault();
+  const input = document.getElementById('custom-input');
+  const v = (input.value || '').trim();
+  if (!v) return;
+  if (state.customs.length >= 8) { toast('여덟 개까지 적으실 수 있어요'); return; }
+  state.customs.push(v);
+  render();
+});
+
+/* 검색은 결과 영역만 다시 그린다. 화면 전체를 다시 그리면 입력 포커스가 튄다. */
+document.addEventListener('input', function (e) {
+  if (e.target.id === 'q') {
+    state.q = e.target.value;
+    const box = document.getElementById('search-results');
+    if (box) box.innerHTML = searchResults();
+    return;
+  }
+  /* render() 는 innerHTML 을 통째로 다시 그리므로 여기서 부르면 입력 중이던 값이 날아간다. */
+  if (e.target.id === 'invite-text' && state.invite) { state.invite.text = e.target.value; }
+});
+
+
+/* ==========================================================================
+   10. 진입 — 해시가 있으면 랜딩을 건너뛰고 바로 리포트 (SPEC §7)
+   ========================================================================== */
+state.members  = loadMembers();
+state.storeAck = storeGet(KEY_A) === '1';
+/* 초대로 들어왔는지. 부울 하나뿐이라 개인정보가 아니다. */
+state.fromInvite = /(^|[#&])invite=1(&|$)/.test(location.hash);
+
+const parsed = parseHash();
+if (parsed) { applyParsed(parsed); state.screen = 'report'; state.activeId = null; }
+else if (state.fromInvite) {
+  /* 수신자가 50~70대일 확률이 높다 — 글자를 처음부터 키워 둔다. */
+  state.screen = 'landing'; state.bigText = true;
+  document.documentElement.classList.add('big-text');
+}
+try { history.replaceState({ screen: state.screen, sheet: null }, '', location.href); } catch (e) { /* file:// 대비 */ }
+render();
+
+})();
+</script>
+</body>
+</html>
