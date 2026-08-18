@@ -124,6 +124,9 @@ svg{display:block}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{
     animation-duration:.01ms!important;animation-iteration-count:1!important;
+    /* 지연까지 0 으로 내려야 한다. fill-mode:both 인 스태거는 duration 만 줄이면
+       delay 동안 from 상태(opacity:0)로 멈춰 있어 글자가 사라진 것처럼 보인다. */
+    animation-delay:0ms!important;
     transition-duration:.01ms!important;scroll-behavior:auto!important;
   }
 }
@@ -306,7 +309,9 @@ button.row-card:hover{border-color:var(--brand-500);background:var(--brand-50)}
 /* ==========================================================================
    히어로 / 신뢰 3칸
    ========================================================================== */
-.wf-hero{flex:none;background:var(--brand-900);border-radius:var(--r-24);padding:var(--s-8) var(--s-5);
+/* 세로 여백을 32 → 24 로 줄였다. 랜딩 첫 화면에 결과 미리보기(.lp)가 들어오면서
+   375×812 에서 CTA 가 접히지 않게 하려면 히어로에서 16px 을 내줘야 한다. */
+.wf-hero{flex:none;background:var(--brand-900);border-radius:var(--r-24);padding:var(--s-6) var(--s-5);
          display:flex;flex-direction:column;gap:var(--s-3)}
 .h-eyebrow{font-size:13px;font-weight:700;color:#8FB3E8;letter-spacing:0}
 .h-title{font-size:30px;font-weight:700;line-height:1.30;letter-spacing:-.02em;color:#F2F6FC;text-wrap:balance}
@@ -321,6 +326,57 @@ button.row-card:hover{border-color:var(--brand-500);background:var(--brand-50)}
 .wf-trust svg{color:var(--brand-600)}
 .wf-trust b{font-size:14px;font-weight:700;color:var(--ink)}
 .wf-trust span{font-size:12px;color:var(--ink-3);font-weight:400;line-height:1.45}
+
+/* ==========================================================================
+   랜딩 결과 미리보기 — 「1분 뒤 이런 걸 받아요」
+   시작할 이유를 만드는 자리다. 다만 **이건 예시이지 사용자의 결과가 아니다.**
+   그래서 (1) 프레임 안에 「예시 화면」 라벨을 박고, (2) 아래쪽 기전 행을
+   블러 + 마스크로 흐려 「읽는 것」이 아니라 「생김새」로만 보이게 한다.
+   ========================================================================== */
+.lp{flex:none;display:flex;flex-direction:column;gap:var(--s-2)}
+.lp-head{display:flex;align-items:baseline;gap:var(--s-2)}
+.lp-head b{font-size:15px;font-weight:700;color:var(--ink);flex:none}
+.lp-head span{font-size:12px;color:var(--ink-3);line-height:1.5;min-width:0}
+.lp-frame{
+  position:relative;overflow:hidden;height:196px;
+  border:1px solid var(--line);border-radius:var(--r-18);
+  background:var(--surface);box-shadow:var(--sh-2);
+}
+.lp-stage{
+  padding:10px;display:flex;flex-direction:column;gap:var(--s-2);
+  -webkit-mask-image:linear-gradient(180deg,#000 0 66%,rgba(0,0,0,.34) 88%,rgba(0,0,0,0) 100%);
+          mask-image:linear-gradient(180deg,#000 0 66%,rgba(0,0,0,.34) 88%,rgba(0,0,0,0) 100%);
+}
+.lp-type{
+  background:linear-gradient(152deg,var(--tp-1) 0%,var(--tp-2) 100%);
+  border-radius:var(--r-14);padding:10px var(--s-2);
+  display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;
+}
+.lp-ico{width:30px;height:30px;border-radius:var(--r-pill);margin-bottom:2px;
+  background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.26);color:#fff;
+  display:flex;align-items:center;justify-content:center;flex:none}
+.lp-ico svg{width:17px;height:17px}
+.lp-t-cap{font-size:11px;font-weight:700;line-height:1.4;color:#CFC9E0}
+.lp-t-name{font-size:20px;font-weight:800;letter-spacing:-.02em;color:#fff;line-height:1.25}
+.lp-t-rare{font-size:11px;font-weight:700;line-height:1.4;color:#EDEAF6;margin-top:3px;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
+  border-radius:var(--r-pill);padding:2px 9px}
+/* 블러는 "읽히지 않게" 하는 장치다. 그래도 색 자체는 본문 규칙(--ink / 심각도 칩)을
+   그대로 써서, 흐림을 걷어내도 대비가 모자라는 조합이 화면에 없게 한다. */
+.lp-rows{display:flex;flex-direction:column;gap:6px;filter:blur(2.4px)}
+.lp-row{display:flex;align-items:center;gap:var(--s-2);background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r-10);padding:8px 10px}
+.lp-chip{font-size:11px;font-weight:700;padding:2px 7px;border-radius:var(--r-6);flex:none}
+.lp-chip.t{background:var(--sev-time-bg);color:var(--sev-time)}
+.lp-chip.c{background:var(--sev-check-bg);color:var(--sev-check)}
+.lp-txt{font-size:12px;line-height:1.4;color:var(--ink);flex:1;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lp-mark{
+  position:absolute;right:10px;bottom:10px;z-index:2;
+  font-size:11px;font-weight:700;letter-spacing:.02em;color:var(--ink);
+  background:var(--surface);border:1px solid var(--line-ctrl);
+  border-radius:var(--r-pill);padding:4px 11px;box-shadow:var(--sh-1);
+}
 
 /* ==========================================================================
    영양제 타일 — 이모지 없음, 텍스트만
@@ -528,20 +584,92 @@ button.row-card:hover{border-color:var(--brand-500);background:var(--brand-50)}
          color:var(--ink-2);font-weight:400}
 
 /* ==========================================================================
-   유형 공개
+   유형 8색 — 딥톤. **결과 공개 블록과 공유 카드 배경에만** 쓴다.
+   판정·기전·등급 근처의 작은 요소에는 절대 쓰지 않는다. 색이 판정 신호로
+   읽히는 순간 「보라색이면 괜찮은가」가 되기 때문이다.
+
+   · hue 70°–170°(초록·연두·민트) 는 하나도 없다. 제일 흔한 결과가 「주의 0건」이라
+     초록 한 점이 「내 조합은 문제 없다」로 읽힌다.
+   · 심각도 팔레트와는 채도·명도를 갈라 두었다.
+       심각도 warn  #B42318 = h4   s78% L40%
+       심각도 time  #B54708 = h24  s91% L37%
+       심각도 check #175CD3 = h218 s80% L46%
+     유형색은 전부 s≤52% · L≤34% 의 딥톤이고, 심각도의 빨강(h0–30)·선명한
+     파랑(h218 s80) 대역을 비운 h228–342 구간에만 놓았다. 유일하게 h가 가까운
+     none(h228)은 s9% 라 색이라기보다 건메탈 회색으로 읽힌다.
+   · --tp-1 = 그라데이션 밝은 끝(대비 계산의 바닥), --tp-2 = 어두운 끝.
+     흰 텍스트 대비는 --tp-1 기준 전부 8.3:1 이상 (WCAG AA 4.5 / AAA 7 통과).
+   · 이웃한 hue 끼리는 채도·명도를 번갈아 준다(진한 채도 ↔ 옅은 채도). 7색을
+     h238–342 의 104° 안에 나눠 담으면 이웃 간격이 17° 밖에 안 되는데, 색상만
+     달리하면 「기초 다지기」와 「스택 빌더」가 같은 보라로 보인다.
+   ========================================================================== */
+.tp-none   {--tp-1:#4A4D59;--tp-2:#33353D}   /* 건메탈 h228 s9  W 8.39 */
+.tp-minimal{--tp-1:#272A82;--tp-2:#1A1C56}   /* 딥인디고 h238 s54 W12.12 */
+.tp-basic  {--tp-1:#4F427B;--tp-2:#382E56}   /* 뮤트바이올렛 h254 s30 W 8.75 */
+.tp-stack  {--tp-1:#4A2370;--tp-2:#33184E}   /* 바이올렛 h270 s52 W11.85 */
+.tp-broad  {--tp-1:#6B3B78;--tp-2:#4A2852}   /* 뮤트퍼플 h288 s34 W 8.32 */
+.tp-vital  {--tp-1:#6B2466;--tp-2:#491845}   /* 마젠타퍼플 h304 s50 W10.15 */
+.tp-beauty {--tp-1:#7D2C5F;--tp-2:#531D3F}   /* 마젠타 h322 s48 W 8.80 */
+.tp-gut    {--tp-1:#5C2D3B;--tp-2:#3E1E28}   /* 딥플럼 h342 s34 W11.03 */
+
+/* ==========================================================================
+   유형 공개 — 「결과를 받는 순간」
    ========================================================================== */
 .wf-reveal{
-  flex:none;text-align:center;background:var(--surface);
-  border:1px solid var(--line);border-radius:var(--r-24);box-shadow:var(--sh-2);
-  padding:var(--s-8) var(--s-5);display:flex;flex-direction:column;align-items:center;gap:var(--s-2);
+  position:relative;flex:none;text-align:center;overflow:hidden;
+  background:linear-gradient(152deg,var(--tp-1) 0%,var(--tp-2) 100%);
+  border:none;border-radius:var(--r-24);box-shadow:var(--sh-4);
+  padding:var(--s-8) var(--s-5) var(--s-6);
+  display:flex;flex-direction:column;align-items:center;gap:var(--s-2);
 }
-.rv-cap{font-size:13px;color:var(--ink-3);letter-spacing:0}
-.rv-icon{width:64px;height:64px;border-radius:var(--r-pill);background:var(--brand-100);
-         color:var(--brand-700);display:flex;align-items:center;justify-content:center;margin-bottom:var(--s-1)}
-.rv-icon svg{width:28px;height:28px}
-.rv-name{font-size:40px;font-weight:700;line-height:1.20;letter-spacing:-.025em;color:var(--ink)}
-.rv-line{font-size:16px;color:var(--ink-2)}
-.rv-why{font-size:13px;color:var(--ink-3)}
+/* 장식 링 — 배경 위에 흰 알파만 얹는다. 텍스트 대비 바닥은 --tp-1 그대로다. */
+.wf-reveal::before{
+  content:"";position:absolute;left:50%;top:-96px;width:280px;height:280px;
+  transform:translateX(-50%);border-radius:var(--r-pill);
+  background:radial-gradient(circle,rgba(255,255,255,.10) 0%,rgba(255,255,255,0) 62%);
+  pointer-events:none;
+}
+.wf-reveal>*{position:relative}
+.rv-cap{font-size:13px;font-weight:700;letter-spacing:.02em;color:#CFC9E0}
+.rv-icon{
+  width:88px;height:88px;border-radius:var(--r-pill);
+  background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.26);
+  color:#fff;display:flex;align-items:center;justify-content:center;margin:var(--s-2) 0 var(--s-1);
+}
+/* .fx-ico.xl (0,2,0) 이 28px 을 걸고 있어 .rv-icon svg (0,1,1) 로는 못 이긴다.
+   유형 엠블럼은 이 화면의 주인공이므로 선택자를 한 칸 올려 44px 을 잡는다. */
+.wf-reveal .rv-icon svg{width:44px;height:44px}
+.rv-name{font-size:40px;font-weight:800;line-height:1.18;letter-spacing:-.03em;color:#fff}
+.rv-line{font-size:16px;line-height:1.6;color:#E6E2F2}
+/* 희소도 — 「사용자 중」이 아니라 「가능한 조합 중」이다. 문구에서 이 구분이 흐려지면 안 된다. */
+.rv-rare{
+  display:inline-flex;align-items:baseline;gap:var(--s-2);margin-top:var(--s-2);
+  padding:8px 15px;border-radius:var(--r-pill);
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
+}
+.rv-rare b{font-family:var(--font-num);font-size:22px;font-weight:800;color:#fff;
+           font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.rv-rare span{font-size:13px;font-weight:700;color:#EDEAF6}
+.rv-rare-src{font-size:12px;line-height:1.6;color:#CFC9E0;max-width:27em}
+.rv-why{font-size:13px;line-height:1.6;color:#CFC9E0;
+        margin-top:var(--s-2);padding-top:var(--s-3);border-top:1px solid rgba(255,255,255,.16);
+        width:100%}
+
+/* 진입 연출 — 아이콘 → 이름 → 한 줄 → 희소도 순. reduced-motion 은 위 @media 가
+   duration·delay 를 함께 0 으로 내려 최종 상태로 바로 앉힌다. */
+@keyframes rv-up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes rv-pop{from{opacity:0;transform:scale(.72)}to{opacity:1;transform:none}}
+/* fill-mode 는 both 가 아니라 backwards 다. both 로 두면 애니메이션이 끝난 뒤에도
+   키프레임의 최종 상태에 고정돼, 연출이 도중에 끊긴 환경에서 글자가 사라진 채 남는다.
+   backwards 는 지연 동안만 from 상태를 쓰고 끝나면 원래 스타일(=보이는 상태)로 돌아온다. */
+.wf-reveal>*{animation:rv-up 460ms var(--e-out) backwards}
+.wf-reveal .rv-cap{animation-delay:40ms}
+.wf-reveal .rv-icon{animation:rv-pop 520ms var(--e-snap) backwards;animation-delay:140ms}
+.wf-reveal .rv-name{animation-delay:400ms}
+.wf-reveal .rv-line{animation-delay:560ms}
+.wf-reveal .rv-rare{animation-delay:700ms}
+.wf-reveal .rv-rare-src{animation-delay:780ms}
+.wf-reveal .rv-why{animation-delay:860ms}
 
 /* ==========================================================================
    유형 노트 / 접힘 블록 공용
@@ -649,18 +777,31 @@ button.row-card:hover{border-color:var(--brand-500);background:var(--brand-50)}
 /* ==========================================================================
    공유 카드 — 유일한 다크 아일랜드. 라디얼 글로우 없음
    ========================================================================== */
+/* 배경만 유형색으로 갈아입는다. 위쪽이 --tp-2(딥톤 어두운 끝), 아래로 갈수록
+   기존 카드 잉크로 떨어진다. --tp-2 는 전부 L≤23% 라 카드 안의 기존 글자색
+   (--card-mut #A6B0C0 이 최저)이 그 위에서도 5.5:1 이상을 유지한다.
+   등급 칩 색(sc-warn/time/check)은 그대로다 — 유형색이 판정 신호를 덮지 않는다. */
 .wf-sharecard{
   width:100%;max-width:320px;margin:0 auto;aspect-ratio:9/16;flex:none;
-  background:linear-gradient(170deg,var(--card-ink-2) 0%,var(--card-ink-1) 100%);
+  background:linear-gradient(168deg,var(--tp-2,var(--card-ink-2)) 0%,var(--card-ink-1) 82%);
   border-radius:var(--r-24);box-shadow:var(--sh-4);padding:var(--s-6) var(--s-5);
   display:flex;flex-direction:column;justify-content:space-between;color:var(--card-fg);overflow:hidden;
 }
 .sc-badge{font-size:12px;color:var(--card-mut)}
+/* 카드 안 희소도 — 「가능한 조합 중」임을 카드에서도 흐리지 않는다 */
+.sc-rare{display:inline-flex;align-items:baseline;gap:6px;align-self:flex-start;
+  padding:5px 11px;border-radius:var(--r-pill);
+  background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.26)}
+.sc-rare b{font-family:var(--font-num);font-size:15px;font-weight:700;color:var(--card-fg);
+           font-variant-numeric:tabular-nums}
+.sc-rare span{font-size:11px;font-weight:700;color:#D6DCE8}
 .sc-top{display:flex;flex-direction:column;align-items:flex-start;gap:var(--s-2)}
 .sc-icon{width:44px;height:44px;color:var(--card-fg)}
 .sc-tname{font-size:28px;font-weight:700;letter-spacing:-.02em;color:var(--card-fg)}
 .sc-tline{font-size:14px;color:var(--card-mut)}
-.sc-mid{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;padding:var(--s-3) 0}
+/* 위 여백을 키운 것은 .sc-rare 가 sc-top 에 들어오면서 레이더의 「기초」 축 라벨
+   (.rd-l.t, top:-6px 로 밖에 걸린다)과 붙어 버렸기 때문이다. */
+.sc-mid{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;padding:var(--s-6) 0 var(--s-3)}
 .sc-bot{display:flex;flex-direction:column;gap:var(--s-2);flex:none}
 .sc-stat{font-size:13px;color:var(--card-mut);line-height:1.55}
 .sc-stat b{font-family:var(--font-num);color:var(--card-fg);font-size:18px}
@@ -694,7 +835,7 @@ button.row-card:hover{border-color:var(--brand-500);background:var(--brand-50)}
 .card .sc-chip.sc-none{color:var(--ink-3)}
 
 /* ---------- 4축 레이더 (공유 카드 안에서만 쓴다) ---------- */
-.rd-wrap{position:relative;width:100%;max-width:190px;margin:0 auto;aspect-ratio:1}
+.rd-wrap{position:relative;width:100%;max-width:170px;margin:0 auto;aspect-ratio:1}
 .rd{width:100%;height:100%;display:block;overflow:visible}
 .rd-ring{fill:none;stroke:rgba(255,255,255,.14);stroke-width:1}
 .rd-ax{stroke:rgba(255,255,255,.10);stroke-width:1}
@@ -1725,6 +1866,43 @@ function ctaBar(countHtml, act, label) {
     '<button class="big-btn primary" data-act="' + act + '">' + label + '</button></div>';
 }
 
+/* ---------- 랜딩 결과 미리보기 ----------
+   랜딩에서 가장 약했던 것은 「무엇을 받는지 모른 채 시작 버튼을 눌러야 한다」였다.
+   실제 리포트의 축소판(유형 카드 + 기전 행 + 등급 칩)을 그대로 줄여서 보여준다.
+   ⚠ 이것은 **예시이지 사용자의 결과가 아니다.** 값은 고정이고, 프레임 안에
+     「예시 화면」 라벨을 박고, 아래쪽 기전 행은 블러 + 마스크로 흐린다.
+   TYPE_RARITY 를 그대로 참조한다 — 미리보기의 숫자와 진짜 결과의 숫자가
+   따로 놀면 그 자체가 거짓말이 된다. */
+const LANDING_DEMO_TYPE = 'broad';
+function landingPreview() {
+  const T = TYPES[LANDING_DEMO_TYPE];
+  const row = function (cls, lv, mechId) {
+    const M = mechOf(mechId);
+    return '<div class="lp-row"><span class="lp-chip ' + cls + '">' + lv + '</span>' +
+      '<span class="lp-txt">' + (M ? M.plain : '') + '</span></div>';
+  };
+  return '<div class="lp">' +
+    '<div class="lp-head"><b>1분 뒤 이런 걸 받아요</b>' +
+      '<span>유형 · 겹치는 작용 · 등급</span></div>' +
+    '<div class="lp-frame">' +
+      '<div class="lp-stage" aria-hidden="true">' +
+        '<div class="lp-type tp-' + LANDING_DEMO_TYPE + '">' +
+          '<span class="lp-ico">' + ico(T.icon, 'fx-ico sm') + '</span>' +
+          '<span class="lp-t-cap">내 영양제 조합 유형</span>' +
+          '<span class="lp-t-name">' + T.name + '</span>' +
+          '<span class="lp-t-rare">' + comma(RARITY_TOTAL) + '가지 조합 중 ' +
+            TYPE_RARITY[LANDING_DEMO_TYPE].toFixed(1) + '%</span>' +
+        '</div>' +
+        '<div class="lp-rows">' +
+          row('t', '시간 조정', 'chelate') +
+          row('c', '확인 권장', 'cyp') +
+        '</div>' +
+      '</div>' +
+      '<span class="lp-mark">예시 화면</span>' +
+    '</div>' +
+  '</div>';
+}
+
 /* ---------- A1 랜딩 ---------- */
 function renderLanding() {
   /* 초대 링크(#invite=1)로 들어온 사람은 수신자다 — 문장을 존댓말 쪽으로 옮기고
@@ -1749,6 +1927,7 @@ function renderLanding() {
       '<div>' + ico('i-clock') + '<b>1분</b><span>두 번만 고르면 끝나요</span></div>' +
       '<div>' + ico('i-check-circle') + '<b>무료</b><span>결제 단계가 없습니다</span></div>' +
     '</div>' +
+    landingPreview() +
     '<div class="fx-spacer"></div>' +
     '<button class="big-btn primary" data-act="start">' +
       (inv ? '지금 드시는 것 고르기' : '내 조합 확인하기') + ico('i-chevron-right') + '</button>' +
@@ -2111,6 +2290,32 @@ const TYPES = {
   stack:   { icon: 'i-t-stack',   name: '스택 빌더',     line: '두세 계열을 같은 비중으로 겹쳐 쌓는 편' }
 };
 
+/* ---------------------------------------------------------------------------
+   유형 희소도 — 사주의 「상위 3%」 자리를 정직하게 채우는 숫자.
+
+   ⚠ 12종 전수 4095가지 시뮬레이션 결과 · 실사용 분포 아님.
+   SUPP_LIST 12종에서 1개 이상 고르는 모든 조합 2^12-1 = 4095가지에
+   typeOfSupps() 를 그대로 돌려 센 값이다. 서비스 이용자가 이 비율로
+   나뉜다는 뜻이 **아니다** — 실사용 분포 데이터는 아직 없다.
+   그래서 화면 문구는 반드시 「가능한 조합 중」으로 쓴다. 「사용자 중」으로
+   바꿔 쓰면 없는 데이터를 있는 척하는 것이 된다.
+
+   none(아무것도 고르지 않음)은 4095가지 안에 없으므로 비율을 두지 않는다.
+   SUPP_LIST·TYPE_CATS·typeOfSupps() 중 하나라도 바뀌면 이 표를 다시 돌려야 한다.
+   --------------------------------------------------------------------------- */
+const RARITY_TOTAL = 4095;
+const TYPE_RARITY = {
+  broad:   29.6,   /* 1213 / 4095 */
+  stack:   13.9,   /*  568 / 4095 */
+  basic:   13.1,   /*  538 / 4095 */
+  vital:   13.1,   /*  538 / 4095 */
+  beauty:  13.1,   /*  538 / 4095 */
+  gut:     13.1,   /*  538 / 4095 */
+  minimal:  4.0    /*  162 / 4095 */
+};
+/* 4095 → "4,095". Intl 없이도 되게 직접 찍는다. */
+function comma(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
 /* 계열 일반론. 개인 판정이 아니다. ⚠ 검수 전 — 약사 검수 필요 */
 const TYPE_NOTE = {
   none:    '지금 드시는 약만으로도 대조할 것이 있습니다. 처방약끼리, 그리고 앞으로 더할 영양제와의 조합을 미리 보아 두면 도움이 됩니다.',
@@ -2234,14 +2439,28 @@ function levelChips(res) {
         coverageMissing(res).length + '가지</span></div>';
 }
 
-/* 유형 공개 — 분석 직후 가장 먼저 보이는 블록. */
+/* 유형 공개 — 분석 직후 가장 먼저 보이는 블록.
+   유형색 딥 그라데이션 + 흰 텍스트. 아이콘 → 이름 → 한 줄 → 희소도 순으로
+   들어온다(스태거는 CSS. prefers-reduced-motion:reduce 는 @media 가 처리한다).
+   ⚠ 이 연출은 「유형」에만 걸린다. 판정(주의 N건) 쪽에는 절대 걸지 않는다 —
+     주의 0건이 가장 흔한 결과인데 거기에 축하 연출이 붙으면 P4 가 깨진다. */
+function rarityLine(key) {
+  const p = TYPE_RARITY[key];
+  if (p === undefined) return '';       /* none — 4095가지 안에 없는 상태 */
+  return '<div class="rv-rare"><span>' + comma(RARITY_TOTAL) + '가지 조합 중</span>' +
+      '<b class="num">' + p.toFixed(1) + '%</b></div>' +
+    '<div class="rv-rare-src">영양제 12종으로 만들 수 있는 조합 ' + comma(RARITY_TOTAL) +
+      '가지를 전부 돌려 센 비율입니다. 이용자 분포가 아닙니다.</div>';
+}
+
 function typeReveal(t) {
   const T = TYPES[t.key];
-  return '<div class="wf-reveal">' +
+  return '<div class="wf-reveal tp-' + t.key + '">' +
     '<div class="rv-cap">내 영양제 조합 유형</div>' +
     '<div class="rv-icon">' + ico(T.icon, 'fx-ico xl') + '</div>' +
     '<div class="rv-name">' + T.name + '</div>' +
     '<div class="rv-line">' + T.line + '</div>' +
+    rarityLine(t.key) +
     '<div class="rv-why">' + typeWhy(t) + '</div>' +
   '</div>';
 }
@@ -2250,13 +2469,21 @@ function shareCard(res, m, k) {
   const t = typeOf();
   const T = TYPES[t.key];
 
-  return '<div class="wf-sharecard">' +
+  /* 카드에도 희소도를 싣는다 — 캡처본이 혼자 돌아다녀도 「가능한 조합 중」이라는
+     단서가 함께 따라가야 하므로, 퍼센트만 두지 않고 4,095 를 같이 박는다. */
+  const p = TYPE_RARITY[t.key];
+  const rare = (p === undefined) ? '' :
+    '<div class="sc-rare"><span>' + comma(RARITY_TOTAL) + '가지 조합 중</span>' +
+      '<b>' + p.toFixed(1) + '%</b></div>';
+
+  return '<div class="wf-sharecard tp-' + t.key + '">' +
     '<div class="sc-top">' +
       '<span class="sc-badge">내 영양제 조합 유형</span>' +
       ico(T.icon, 'sc-icon') +
       '<span class="sc-tname">' + T.name + '</span>' +
       /* typeWhy() 는 개수를 노출하므로 카드에 싣지 않는다. */
       '<div class="sc-tline">' + T.line + '</div>' +
+      rare +
     '</div>' +
     '<div class="sc-mid">' + radar(t.cats) + '</div>' +
     '<div class="sc-bot">' +
@@ -2881,6 +3108,55 @@ const RENDERERS = {
   family: renderFamily
 };
 
+/* ---------- 판정 숫자 카운트업 ----------
+   ⚠ 이 연출은 「숫자를 세는 것」이지 「좋은 결과를 축하하는 것」이 아니다.
+     주의 0건 화면에서도 「확인하지 못한 것 N」이 같은 방식으로 올라간다 —
+     0 쪽만 연출하면 그게 곧 안심 신호가 된다(P4).
+   prefers-reduced-motion: reduce 면 굴리지 않고 최종값을 그대로 앉힌다. */
+function reduceMotion() {
+  try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  catch (e) { return false; }
+}
+function countUp(el, ms, delay) {
+  if (!el) return;
+  const n = Number(el.textContent) || 0;
+  el.textContent = String(n);
+  /* 굴리지 않는 조건 넷.
+     · reduce      — 사용자가 모션을 줄여 달라고 했다
+     · n <= 1      — 굴릴 것이 없다
+     · rAF 없음    — 굴릴 방법이 없다
+     · document.hidden — 백그라운드 탭에서는 rAF 가 멈춘다. 그대로 두면 숫자가
+       중간값에 얼어붙고, 탭을 열었을 때 실제보다 **작은** 건수가 떠 있게 된다.
+       보는 사람이 없는 동안의 연출을 위해 틀린 숫자를 띄울 이유가 없다. */
+  if (reduceMotion() || n <= 1 || !window.requestAnimationFrame || document.hidden) return;
+
+  /* ⚠ 0 에서 시작하지 않는다. 「0가지 확인이 필요해요」가 한 프레임이라도 뜨면
+     그 프레임이 곧 P4 위반(주의 없음 오독)이다. 1 에서 n 까지만 굴린다. */
+  el.textContent = '1';
+  let done = false;
+  const finish = function () { if (!done) { done = true; el.textContent = String(n); } };
+  /* 어떤 이유로든 프레임이 오지 않으면 최종값을 강제로 앉힌다 — 숫자가 작게 남는
+     경우를 만들지 않는 것이 연출보다 우선이다. */
+  const guard = setTimeout(finish, (delay || 0) + ms + 1200);
+  setTimeout(function () {
+    if (el.isConnected === false) { clearTimeout(guard); return; }
+    let t0 = null;
+    const tick = function (now) {
+      if (done) return;
+      if (el.isConnected === false) { clearTimeout(guard); return; }
+      if (t0 === null) t0 = now;
+      const p = Math.min(1, (now - t0) / ms);
+      el.textContent = String(Math.max(1, Math.round(n * (1 - Math.pow(1 - p, 3)))));
+      if (p < 1) requestAnimationFrame(tick);
+      else { clearTimeout(guard); finish(); }
+    };
+    requestAnimationFrame(tick);
+  }, delay || 0);
+}
+
+/* 리포트에 「막 도착했을 때」만 굴린다. 리포트 안에서의 재렌더(앱 안내·복사 실패
+   안내)까지 다시 굴리면 이미 읽은 숫자가 0으로 되돌아가 버린다. */
+let lastRenderedScreen = null;
 function render() {
   app.innerHTML = RENDERERS[state.screen]();
   sheetRoot.innerHTML = renderSheet();
@@ -2898,6 +3174,11 @@ function render() {
     const q = document.getElementById('q');
     if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
   }
+  if (state.screen === 'report' && lastRenderedScreen !== 'report') {
+    countUp(app.querySelector('.wf-verdict .v-num'), 820, 320);
+    countUp(app.querySelector('.wf-verdict .v-alt'), 820, 440);
+  }
+  lastRenderedScreen = state.screen;
 }
 
 
